@@ -1,0 +1,11 @@
+{
+  "name": "ff-arena-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix admin-web run dev",
+    "build": "npm --prefix admin-web run build",
+    "preview": "npm --prefix admin-web run preview",
+    "install:web": "npm --prefix admin-web install"
+  }
+}

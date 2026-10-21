@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "Tournament": {
+      "collection": "tournaments",
+      "fields": {
+        "id": { "type": "string", "description": "Unique tournament ID" },
+        "name": { "type": "string", "description": "Tournament name" },
+        "mode": { "type": "string", "description": "Solo | Duo | Squad" },
+        "division": { "type": "string", "description": "Rookie | Mid | Pro | Open" },
+        "startDateTime": { "type": "timestamp", "description": "Tournament start date and time" },
+        "maxSlots": { "type": "number", "description": "Maximum slots (e.g. 48)" },
+        "joinedSlots": { "type": "number", "description": "Current registrations" },
+        "sponsorName": { "type": "string", "description": "Brand sponsor name" },
+        "sponsorLogo": { "type": "string", "description": "Logo URL" },
+        "prizeAmount": { "type": "number", "description": "Prize pool in INR" },
+        "prizeDescription": { "type": "string", "description": "Prize breakdown text" },
+        "rules": { "type": "string", "description": "Tournament rules text" },
+        "status": { "type": "string", "description": "Draft | Open | Full | Live | Completed | Cancelled" },
+        "roomId": { "type": "string", "description": "Custom room ID" },
+        "roomPassword": { "type": "string", "description": "Custom room password" },
+        "autoRevealMinutes": { "type": "number", "description": "Minutes before start to reveal credentials (default 10)" },
+        "isRoomRevealed": { "type": "boolean", "description": "Whether room credentials are currently visible" },
+        "createdAt": { "type": "timestamp", "description": "Creation timestamp" }
+      }
+    },
+    "CoinTransaction": {
+      "collection": "coinTransactions",
+      "fields": {
+        "id": { "type": "string", "description": "Transaction ID" },
+        "uid": { "type": "string", "description": "Player UID" },
+        "type": { "type": "string", "description": "earn | spend | admin_adjust" },
+        "amount": { "type": "number", "description": "Positive for credit, negative for debit" },
+        "reason": { "type": "string", "description": "Reason for coin change" },
+        "refId": { "type": "string", "description": "Tournament ID, Mission ID, Store Item ID, or Admin Reference" },
+        "createdAt": { "type": "timestamp", "description": "Timestamp of ledger entry" },
+        "createdBy": { "type": "string", "description": "System or Admin UID" }
+      }
+    },
+    "CoinRule": {
+      "collection": "coinRules",
+      "fields": {
+        "id": { "type": "string", "description": "Action key (e.g. join_match, win_match, per_kill, daily_streak)" },
+        "name": { "type": "string", "description": "Display name" },
+        "coins": { "type": "number", "description": "Amount of coins awarded" },
+        "description": { "type": "string", "description": "Rule explanation" },
+        "isEnabled": { "type": "boolean", "description": "Whether rule is active" }
+      }
+    },
+    "StoreItem": {
+      "collection": "storeItems",
+      "fields": {
+        "id": { "type": "string", "description": "Item ID" },
+        "name": { "type": "string", "description": "Item title" },
+        "category": { "type": "string", "description": "badge | frame | theme | ticket" },
+        "costCoins": { "type": "number", "description": "Cost in loyalty coins" },
+        "previewUrl": { "type": "string", "description": "Asset thumbnail" },
+        "isAvailable": { "type": "boolean", "description": "In-stock status" }
+      }
+    },
+    "Registration": {
+      "collection": "registrations",
+      "fields": {
+        "id": { "type": "string", "description": "Registration ID" },
+        "tournamentId": { "type": "string", "description": "Tournament reference" },
+        "userId": { "type": "string", "description": "Player UID" },
+        "ffUid": { "type": "string", "description": "Free Fire in-game UID" },
+        "inGameName": { "type": "string", "description": "IGN" },
+        "status": { "type": "string", "description": "Confirmed | CheckedIn | Disqualified" },
+        "registeredAt": { "type": "timestamp", "description": "Registration time" }
+      }
+    },
+    "Result": {
+      "collection": "results",
+      "fields": {
+        "id": { "type": "string", "description": "Result ID" },
+        "tournamentId": { "type": "string", "description": "Tournament ID" },
+        "rank": { "type": "number", "description": "Final placement" },
+        "kills": { "type": "number", "description": "Kill tally" },
+        "points": { "type": "number", "description": "Total points" },
+        "proofUrl": { "type": "string", "description": "Screenshot or stream URL" },
+        "isVerified": { "type": "boolean", "description": "Verified by referee" },
+        "isPublished": { "type": "boolean", "description": "Published to players" },
+        "publishedAt": { "type": "timestamp", "description": "Publish time" }
+      }
+    },
+    "Payout": {
+      "collection": "payouts",
+      "fields": {
+        "id": { "type": "string", "description": "Payout record ID" },
+        "tournamentId": { "type": "string", "description": "Tournament ID" },
+        "winnerName": { "type": "string", "description": "Player name" },
+        "ffUid": { "type": "string", "description": "Free Fire UID" },
+        "amount": { "type": "number", "description": "Prize amount in INR" },
+        "status": { "type": "string", "description": "Pending | Paid | Failed" },
+        "note": { "type": "string", "description": "UTR number, sponsor remark, or failure reason" },
+        "updatedAt": { "type": "timestamp", "description": "Last updated" }
+      }
+    },
+    "Report": {
+      "collection": "reports",
+      "fields": {
+        "id": { "type": "string", "description": "Report ID" },
+        "reporterUid": { "type": "string", "description": "Reporting player UID" },
+        "reportedUid": { "type": "string", "description": "Target player UID (optional)" },
+        "tournamentId": { "type": "string", "description": "Associated tournament ID" },
+        "category": { "type": "string", "description": "cheating | wrong_result | room_issue | harassment" },
+        "status": { "type": "string", "description": "Open | In review | Resolved" },
+        "details": { "type": "string", "description": "Player grievance text" },
+        "adminNotes": { "type": "string", "description": "Referee internal notes" }
+      }
+    },
+    "AuditLog": {
+      "collection": "auditLogs",
+      "fields": {
+        "id": { "type": "string", "description": "Log ID" },
+        "adminEmail": { "type": "string", "description": "Admin email" },
+        "adminRole": { "type": "string", "description": "SuperAdmin | Moderator | Support" },
+        "action": { "type": "string", "description": "Action performed" },
+        "targetEntity": { "type": "string", "description": "e.g. Tournament, User, Coins" },
+        "details": { "type": "string", "description": "Details JSON/text" },
+        "timestamp": { "type": "timestamp", "description": "Action timestamp" }
+      }
+    }
+  }
+}

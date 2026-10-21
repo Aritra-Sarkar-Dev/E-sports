@@ -1,0 +1,6 @@
+{
+  "name": "FF Arena",
+  "description": "Free Fire MAX esports tournament platform for Indian players with sponsor-backed prize pools, live brackets, room credentials, and leaderboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

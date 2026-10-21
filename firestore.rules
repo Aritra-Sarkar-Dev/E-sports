@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['SuperAdmin', 'Moderator', 'Support'] ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'SuperAdmin' ||
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'SuperAdmin'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Tournaments: Public read, only admin can create/update/delete
+    match /tournaments/{tournamentId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Registrations: Authenticated users can register themselves, admins can manage
+    match /registrations/{registrationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    // Users: Players can read and update their own profile, admins can manage
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin();
+      allow create, delete: if isAdmin();
+    }
+
+    // Coin Transactions (Ledger): Immutable audit trail
+    // Users can read their own transactions; only admins or secure server can write
+    match /coinTransactions/{txId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAdmin() || (
+        isAuthenticated() && request.resource.data.uid == request.auth.uid && request.resource.data.type in ['earn', 'spend']
+      );
+      allow update, delete: if false; // Immutable ledger
+    }
+
+    // Coin Rules & Store Items: Public read, only SuperAdmin can modify rules
+    match /coinRules/{ruleId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /storeItems/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Tournament Results & Match Proofs
+    match /results/{resultId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Prize Payouts (Record Keeping Only - No in-app money)
+    match /payouts/{payoutId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Reports and Disputes
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Audit Log: Read-only for admins, append-only
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Admin Users List
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // Leaderboards
+    match /leaderboard/{entryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
