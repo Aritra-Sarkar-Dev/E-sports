@@ -1,13 +1,19 @@
 package com.example
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,448 +22,469 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class TournamentItem(
-    val id: String,
-    val name: String,
-    val mode: String,
-    val division: String,
-    val prizePool: String,
-    val slots: String,
-    val status: String,
-    val roomId: String? = null,
-    val roomPass: String? = null
-)
+import com.example.ui.components.*
+import com.example.ui.model.*
+import com.example.ui.screens.*
+import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme(
-                colorScheme = darkColorScheme(
-                    primary = Color(0xFFFF6D00),
-                    secondary = Color(0xFFFFAB00),
-                    background = Color(0xFF0F172A),
-                    surface = Color(0xFF1E293B),
-                    onPrimary = Color.White,
-                    onBackground = Color(0xFFF8FAFC),
-                    onSurface = Color(0xFFF1F5F9)
-                )
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    FFArenaMainScreen()
-                }
+            MaterialTheme(colorScheme = FFArenaColorScheme) {
+                FFArenaPlayerApp()
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FFArenaMainScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
+fun FFArenaPlayerApp() {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val sampleTournaments = remember {
-        listOf(
-            TournamentItem(
-                id = "t1",
-                name = "FF Pro Bermuda Championship",
-                mode = "Squad",
-                division = "Pro",
-                prizePool = "₹10,000",
-                slots = "42/48",
-                status = "Open",
-                roomId = "889210",
-                roomPass = "ffpro99"
-            ),
-            TournamentItem(
-                id = "t2",
-                name = "Daily Purgatory Rush",
-                mode = "Solo",
-                division = "Open",
-                prizePool = "₹2,500",
-                slots = "48/48",
-                status = "Full"
-            ),
-            TournamentItem(
-                id = "t3",
-                name = "Kalahari Duo Masters",
-                mode = "Duo",
-                division = "Mid",
-                prizePool = "₹5,000",
-                slots = "18/24",
-                status = "Open"
-            )
-        )
+    // Navigation State
+    var currentTab by remember { mutableStateOf("Home") }
+
+    // Back button handling: if not on Home, back goes to Home
+    BackHandler(enabled = currentTab != "Home") {
+        currentTab = "Home"
+    }
+
+    // App State
+    var profile by remember { mutableStateOf(MockData.defaultProfile) }
+    var wallet by remember { mutableStateOf(MockData.defaultWallet) }
+    var coins by remember { mutableIntStateOf(540) }
+    var streakDay by remember { mutableIntStateOf(4) }
+    var hasCheckedInToday by remember { mutableStateOf(false) }
+
+    var matches by remember { mutableStateOf(MockData.matchesList) }
+    var transactions by remember { mutableStateOf(MockData.transactionsList) }
+    var missions by remember { mutableStateOf(MockData.missionsList) }
+    val storeItems = remember { MockData.storeList }
+    var notifications by remember { mutableStateOf(MockData.notificationsList) }
+
+    // Modals state
+    var selectedDetailMatch by remember { mutableStateOf<EsportsMatch?>(null) }
+    var selectedJoinMatch by remember { mutableStateOf<EsportsMatch?>(null) }
+    var showSpinWheel by remember { mutableStateOf(false) }
+    var showAddMoney by remember { mutableStateOf(false) }
+    var showWithdraw by remember { mutableStateOf(false) }
+    var showLeaderboard by remember { mutableStateOf(false) }
+    var showNotifications by remember { mutableStateOf(false) }
+    var reportMatch by remember { mutableStateOf<EsportsMatch?>(null) }
+
+    fun showToast(message: String) {
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message)
+        }
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = "FF Arena Logo",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "FF Arena Esports",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                actions = {
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier.testTag("notification_button")
+        modifier = Modifier.fillMaxSize(),
+        containerColor = BgDark,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = 90.dp)
+            ) { data ->
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, NeonLime.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(18.dp))
+                        Text(data.visuals.message, fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Bold)
                     }
                 }
-            )
+            }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Tournaments") },
-                    label = { Text("Matches") },
-                    modifier = Modifier.testTag("tab_matches")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.VpnKey, contentDescription = "Room IDs") },
-                    label = { Text("My Rooms") },
-                    modifier = Modifier.testTag("tab_rooms")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    modifier = Modifier.testTag("tab_profile")
-                )
-            }
+            FloatingPillBottomNav(
+                currentTab = currentTab,
+                onTabSelect = { currentTab = it },
+                unreadNotifications = notifications.count { !it.isRead }
+            )
         }
-    ) { paddingValues ->
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(innerPadding)
         ) {
-            when (selectedTab) {
-                0 -> TournamentsListTab(tournaments = sampleTournaments)
-                1 -> RoomCredentialsTab(tournaments = sampleTournaments.filter { it.roomId != null })
-                2 -> ProfileTab()
-            }
-        }
-    }
-}
-
-@Composable
-fun TournamentsListTab(tournaments: List<TournamentItem>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE65100).copy(alpha = 0.2f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Campaign,
-                        contentDescription = "Notice",
-                        tint = Color(0xFFFFB74D),
-                        modifier = Modifier.size(24.dp)
+            when (currentTab) {
+                "Home" -> {
+                    HomeScreen(
+                        profile = profile,
+                        wallet = wallet,
+                        coins = coins,
+                        matches = matches,
+                        leaderboard = MockData.leaderboardList,
+                        unreadCount = notifications.count { !it.isRead },
+                        onOpenNotifications = { showNotifications = true },
+                        onOpenWallet = { currentTab = "Wallet" },
+                        onOpenSpinWheel = { showSpinWheel = true },
+                        onDailyCheckIn = {
+                            if (!hasCheckedInToday) {
+                                hasCheckedInToday = true
+                                coins += 40
+                                showToast("Daily Check-In: +40 Coins added!")
+                            }
+                        },
+                        hasCheckedInToday = hasCheckedInToday,
+                        onOpenMatchDetail = { selectedDetailMatch = it },
+                        onOpenLeaderboard = { showLeaderboard = true },
+                        onSelectModeFilter = { mode ->
+                            currentTab = "Matches"
+                        }
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Custom Room ID & Password will be revealed 10 minutes before match start.",
-                        fontSize = 13.sp,
-                        color = Color(0xFFFFE0B2)
+                }
+
+                "Matches" -> {
+                    MatchesScreen(
+                        matches = matches,
+                        onOpenMatchDetail = { selectedDetailMatch = it },
+                        onJoinMatch = { selectedJoinMatch = it },
+                        onReportMatch = { reportMatch = it }
+                    )
+                }
+
+                "Wallet" -> {
+                    WalletScreen(
+                        wallet = wallet,
+                        profile = profile,
+                        transactions = transactions,
+                        onAddMoneyClick = { showAddMoney = true },
+                        onWithdrawClick = { showWithdraw = true }
+                    )
+                }
+
+                "Rewards" -> {
+                    RewardsScreen(
+                        coins = coins,
+                        streakDay = streakDay,
+                        hasCheckedInToday = hasCheckedInToday,
+                        missions = missions,
+                        storeItems = storeItems,
+                        onDailyCheckIn = {
+                            if (!hasCheckedInToday) {
+                                hasCheckedInToday = true
+                                coins += 40
+                                showToast("Day $streakDay claimed! +40 Coins.")
+                            }
+                        },
+                        onSpinWheelClick = { showSpinWheel = true },
+                        onClaimMission = { mission ->
+                            missions = missions.map {
+                                if (it.id == mission.id) it.copy(isClaimed = true) else it
+                            }
+                            coins += mission.rewardCoins
+                            showToast("Mission Claimed: +${mission.rewardCoins} Coins!")
+                        },
+                        onRedeemStoreItem = { item ->
+                            if (coins >= item.coins) {
+                                coins -= item.coins
+                                showToast("Redeemed ${item.title}!")
+                            } else {
+                                showToast("Need ${item.coins - coins} more coins to redeem.")
+                            }
+                        }
+                    )
+                }
+
+                "Profile" -> {
+                    ProfileScreen(
+                        profile = profile,
+                        onCopyUid = {
+                            clipboardManager.setText(AnnotatedString(profile.ffUid))
+                            showToast("Free Fire UID copied to clipboard!")
+                        },
+                        onCopyReferral = {
+                            clipboardManager.setText(AnnotatedString(profile.referralCode))
+                            showToast("Referral Code copied: ${profile.referralCode}")
+                        },
+                        onOpenKyc = {
+                            showToast("KYC Status: Verified with UPI ${profile.linkedUpi}")
+                        },
+                        onOpenEditProfile = {
+                            showToast("Edit Gamer Profile opened")
+                        },
+                        onOpenSettings = { setting ->
+                            when (setting) {
+                                "notifications" -> showNotifications = true
+                                "support" -> showToast("Telegram Gamer Support: @FFArenaSupportBot")
+                                "terms" -> showToast("18+ Only • Fair Play Certified")
+                                "logout" -> showToast("Logged out of player session")
+                                else -> showToast("Opened $setting")
+                            }
+                        }
                     )
                 }
             }
         }
+    }
 
-        items(tournaments) { item ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("tournament_card_${item.id}"),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "${item.mode} • ${item.division}",
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Text(
-                            text = item.status,
-                            color = if (item.status == "Open") Color(0xFF4CAF50) else Color(0xFFFF9800),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = item.name,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Prize Pool",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = item.prizePool,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD54F)
-                            )
-                        }
-
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "Slots",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = item.slots,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Button(
-                            onClick = { },
-                            modifier = Modifier
-                                .testTag("join_button_${item.id}")
-                                .height(38.dp),
-                            enabled = item.status == "Open",
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = if (item.status == "Open") "Join Match" else "Full",
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
+    // Modal Dialogs
+    selectedDetailMatch?.let { match ->
+        MatchDetailModal(
+            match = match,
+            userWallet = wallet,
+            onDismiss = { selectedDetailMatch = null },
+            onJoinClick = {
+                selectedJoinMatch = match
+            },
+            onCopyRoomCredentials = {
+                if (match.roomId != null) {
+                    clipboardManager.setText(AnnotatedString("Room: ${match.roomId} Pass: ${match.roomPass}"))
+                    showToast("Room ID & Pass copied!")
                 }
             }
-        }
+        )
     }
-}
 
-@Composable
-fun RoomCredentialsTab(tournaments: List<TournamentItem>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            Text(
-                text = "Authorized Match Rooms",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Room details are only visible to confirmed registered players.",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        items(tournaments) { item ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("room_card_${item.id}"),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = item.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF0F172A))
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("Room ID", fontSize = 11.sp, color = Color.Gray)
-                            Text(
-                                item.roomId ?: "Pending",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD54F)
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("Password", fontSize = 11.sp, color = Color.Gray)
-                            Text(
-                                item.roomPass ?: "Pending",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD54F)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProfileTab() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Surface(
-            modifier = Modifier.size(80.dp),
-            shape = RoundedCornerShape(40.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Avatar",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp)
+    selectedJoinMatch?.let { match ->
+        JoinMatchModal(
+            match = match,
+            wallet = wallet,
+            userProfile = profile,
+            onDismiss = { selectedJoinMatch = null },
+            onConfirmJoin = { ign, teammates ->
+                // Deduct entry fee
+                wallet = wallet.copy(
+                    deposit = (wallet.deposit - match.entryFee).coerceAtLeast(0)
                 )
+                // Mark match as joined
+                matches = matches.map {
+                    if (it.id == match.id) {
+                        it.copy(
+                            isJoined = true,
+                            joinedSlots = it.joinedSlots + 1,
+                            roomId = "772901",
+                            roomPass = "booyah99",
+                            isRoomRevealed = true
+                        )
+                    } else it
+                }
+                // Add transaction record
+                transactions = listOf(
+                    TransactionRecord(
+                        id = "tx_${System.currentTimeMillis()}",
+                        title = "Entry Fee: ${match.title}",
+                        type = "entry_fee",
+                        amount = match.entryFee,
+                        timeText = "Just now",
+                        isPositive = false
+                    )
+                ) + transactions
+
+                showToast("🎉 Successfully Registered for ${match.title}!")
+            },
+            onAddMoney = {
+                showAddMoney = true
             }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Aritra Sarkar",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
         )
+    }
 
-        Text(
-            text = "FF UID: 994821034",
-            fontSize = 13.sp,
-            color = Color.Gray
+    if (showSpinWheel) {
+        SpinWheelModal(
+            onDismiss = { showSpinWheel = false },
+            onSpinWin = { prizeCoins ->
+                coins += prizeCoins
+                showToast("🎉 Won +$prizeCoins Coins in Lucky Spin!")
+            }
         )
+    }
 
-        Spacer(modifier = Modifier.height(20.dp))
+    if (showAddMoney) {
+        AddMoneyModal(
+            onDismiss = { showAddMoney = false },
+            onConfirmAdd = { amount ->
+                wallet = wallet.copy(deposit = wallet.deposit + amount)
+                transactions = listOf(
+                    TransactionRecord(
+                        id = "tx_${System.currentTimeMillis()}",
+                        title = "UPI Deposit (PhonePe)",
+                        type = "deposit",
+                        amount = amount,
+                        timeText = "Just now",
+                        isPositive = true
+                    )
+                ) + transactions
+                showToast("✓ Added ₹$amount to deposit wallet!")
+            }
+        )
+    }
 
+    if (showWithdraw) {
+        WithdrawModal(
+            currentWinnings = wallet.winnings,
+            linkedUpi = profile.linkedUpi,
+            onDismiss = { showWithdraw = false },
+            onConfirmWithdraw = { amount, upi ->
+                wallet = wallet.copy(winnings = wallet.winnings - amount)
+                transactions = listOf(
+                    TransactionRecord(
+                        id = "tx_${System.currentTimeMillis()}",
+                        title = "Withdrawal to $upi",
+                        type = "withdrawal",
+                        amount = amount,
+                        timeText = "Processing (60s)",
+                        isPositive = false
+                    )
+                ) + transactions
+                showToast("⚡ ₹$amount withdrawal initiated to $upi!")
+            }
+        )
+    }
+
+    if (showLeaderboard) {
+        LeaderboardModal(
+            rows = MockData.leaderboardList,
+            onDismiss = { showLeaderboard = false }
+        )
+    }
+
+    if (showNotifications) {
+        NotificationsModal(
+            notifications = notifications,
+            onDismiss = { showNotifications = false },
+            onMarkAllRead = {
+                notifications = notifications.map { it.copy(isRead = true) }
+                showToast("All notifications marked as read")
+            }
+        )
+    }
+
+    reportMatch?.let { match ->
+        ReportModal(
+            match = match,
+            onDismiss = { reportMatch = null },
+            onSubmitReport = { reason, desc ->
+                showToast("Dispute submitted to referee. Ticket ID: #DISP${System.currentTimeMillis() % 10000}")
+            }
+        )
+    }
+}
+
+@Composable
+fun FloatingPillBottomNav(
+    currentTab: String,
+    onTabSelect: (String) -> Unit,
+    unreadNotifications: Int
+) {
+    val items = listOf(
+        NavigationItem("Home", Icons.Default.Home),
+        NavigationItem("Matches", Icons.Default.SportsEsports),
+        NavigationItem("Wallet", Icons.Default.AccountBalanceWallet),
+        NavigationItem("Rewards", Icons.Default.CardGiftcard),
+        NavigationItem("Profile", Icons.Default.Person)
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(32.dp), spotColor = NeonLime.copy(alpha = 0.4f))
+                .clip(RoundedCornerShape(32.dp))
+                .border(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        listOf(NeonLime.copy(alpha = 0.4f), ElectricViolet.copy(alpha = 0.4f), CardBorder)
+                    ),
+                    RoundedCornerShape(32.dp)
+                )
+                .testTag("floating_bottom_nav"),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xEE14141F))
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceAround
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Coins", fontSize = 12.sp, color = Color.Gray)
-                    Text("450", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFD54F))
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Matches", fontSize = 12.sp, color = Color.Gray)
-                    Text("24", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Wins", fontSize = 12.sp, color = Color.Gray)
-                    Text("7", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                items.forEach { navItem ->
+                    val isSelected = currentTab == navItem.label
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (isSelected) NeonLime.copy(alpha = 0.15f) else Color.Transparent
+                            )
+                            .clickable { onTabSelect(navItem.label) }
+                            .padding(vertical = 6.dp)
+                            .testTag("tab_${navItem.label.lowercase()}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Box {
+                                Icon(
+                                    imageVector = navItem.icon,
+                                    contentDescription = navItem.label,
+                                    tint = if (isSelected) NeonLime else TextMuted,
+                                    modifier = Modifier.size(22.dp)
+                                )
+
+                                if (navItem.label == "Matches") {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .align(Alignment.TopEnd)
+                                            .clip(CircleShape)
+                                            .background(LiveRed)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = navItem.label,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) NeonLime else TextMuted
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+data class NavigationItem(
+    val label: String,
+    val icon: ImageVector
+)
