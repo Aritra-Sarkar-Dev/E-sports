@@ -16,12 +16,33 @@ import { LeaderboardAdminPage } from './pages/LeaderboardAdminPage';
 import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 
+import { PlayerApp } from './player/PlayerApp';
+import { Smartphone, Sliders } from 'lucide-react';
+
 const AppContent: React.FC = () => {
   const { currentAdmin } = useAuth();
+  const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
 
+  if (viewMode === 'player') {
+    return <PlayerApp onSwitchToAdmin={() => setViewMode('admin')} />;
+  }
+
+  // Admin Mode
   if (!currentAdmin) {
-    return <LoginPage />;
+    return (
+      <div className="relative">
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => setViewMode('player')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C8FF3D] text-black font-extrabold text-xs rounded-full shadow-lg"
+          >
+            <Smartphone className="w-3.5 h-3.5" /> Back to Player App
+          </button>
+        </div>
+        <LoginPage />
+      </div>
+    );
   }
 
   const renderContent = () => {
@@ -58,9 +79,25 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <AdminLayout currentTab={currentTab} onSelectTab={setCurrentTab}>
-      {renderContent()}
-    </AdminLayout>
+    <div className="relative">
+      {/* Quick return to Player App bar */}
+      <div className="bg-[#17113D] border-b border-[#7B5CFF]/30 px-4 py-2 flex items-center justify-between text-xs sticky top-0 z-50">
+        <span className="text-[#9498AE] flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#C8FF3D] animate-ping" />
+          <strong className="text-white">Tournament Organizer Portal (Admin Console)</strong>
+        </span>
+        <button
+          onClick={() => setViewMode('player')}
+          className="flex items-center gap-1.5 px-3 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold rounded-full shadow transition-all active:scale-95"
+        >
+          <Smartphone className="w-3.5 h-3.5" /> Return to Player App
+        </button>
+      </div>
+
+      <AdminLayout currentTab={currentTab} onSelectTab={setCurrentTab}>
+        {renderContent()}
+      </AdminLayout>
+    </div>
   );
 };
 
