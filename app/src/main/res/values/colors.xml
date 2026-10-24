@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#0A0A0F</color>
+    <color name="card_surface">#14141F</color>
+    <color name="neon_lime">#C8FF3D</color>
+    <color name="fire_orange">#FF6A00</color>
+    <color name="electric_violet">#7B5CFF</color>
+    <color name="gold_prize">#FFB300</color>
+</resources>

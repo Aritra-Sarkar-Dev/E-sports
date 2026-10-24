@@ -23,33 +23,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses || true
-          mkdir -p ~/.android
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-
-      - name: Configure debug signing keystore
-        run: |
-          mkdir -p ~/.android
-          if [ -f "./debug.keystore.base64" ]; then
-            echo "Decoding debug.keystore from debug.keystore.base64..."
-            base64 -d ./debug.keystore.base64 > ~/.android/debug.keystore
-          elif [ -f "./debug.keystore" ]; then
-            cp ./debug.keystore ~/.android/debug.keystore
-          else
-            echo "Generating fallback debug keystore..."
-            keytool -genkeypair -v -keystore ~/.android/debug.keystore \
-              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
-          cp ~/.android/debug.keystore ./debug.keystore
-          chmod 644 ~/.android/debug.keystore ./debug.keystore
-          echo "Debug keystore configured successfully."
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -59,19 +35,14 @@ jobs:
 
       - name: Verify APK output
         run: |
+          echo "Listing generated APK files:"
+          ls -R app/build/outputs/apk
           TARGET_APK="app/build/outputs/apk/debug/app-debug.apk"
           if [ ! -f "$TARGET_APK" ]; then
-            echo "Error: Expected APK file not found at $TARGET_APK"
-            if [ -d "app/build/outputs/apk" ]; then
-              find app/build/outputs/apk -type f -name "*.apk"
-            fi
+            echo "Error: Expected APK not found at $TARGET_APK"
             exit 1
           fi
-          if [ ! -s "$TARGET_APK" ]; then
-            echo "Error: APK file at $TARGET_APK is empty (0 bytes)."
-            exit 1
-          fi
-          echo "✓ Verified APK at $TARGET_APK (Size: $(stat -c%s "$TARGET_APK") bytes)"
+          echo "✓ Successfully verified $TARGET_APK (Size: $(stat -c%s "$TARGET_APK") bytes)"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
@@ -82,15 +53,15 @@ jobs:
 
       - name: Prepare APK release asset
         id: prepare_asset
+        if: success()
         run: |
           TMP_DIR=$(mktemp -d)
           ASSET_FILE="${TMP_DIR}/app-debug.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$ASSET_FILE"
           echo "asset_path=${ASSET_FILE}" >> "$GITHUB_OUTPUT"
-          echo "Prepared release asset at ${ASSET_FILE}"
 
       - name: Publish APK to GitHub Releases
-        id: publish_release
+        if: success()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -98,31 +69,20 @@ jobs:
           TAG_NAME: v1.0.0-build-${{ github.run_number }}
           RELEASE_TITLE: FF Arena Esports v1.0.0 (Build #${{ github.run_number }})
         run: |
-          NOTES=$(cat <<EOF
-          ### FF Arena Esports - Debug APK
-          - **Build:** #${{ github.run_number }}
-          - **Commit:** ${{ github.sha }}
-          - **File:** app-debug.apk
-          - **Download:** Ready to install on Android
-          EOF
-          )
           gh release create "$TAG_NAME" "$ASSET_PATH" \
             --target "$GITHUB_SHA" \
             --title "$RELEASE_TITLE" \
-            --notes "$NOTES" \
+            --notes "Automated Debug APK Build #${{ github.run_number }} - Ready for download and install." \
             --latest
 
       - name: Report APK download result
         if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v1.0.0-build-${{ github.run_number }}
         run: |
           DIRECT_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/app-debug.apk"
           echo "### 🚀 APK READY FOR DOWNLOAD" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "[📥 **Click here to download app-debug.apk directly**](${DIRECT_URL})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Direct Download URL:** \`${DIRECT_URL}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Release Tag:** \`${TAG_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **GitHub Actions Artifact:** You can also download \`app-debug-apk\` directly under Artifacts on this run page." >> "$GITHUB_STEP_SUMMARY"
+          echo "Direct Download URL: \`${DIRECT_URL}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release Tag: \`v1.0.0-build-${{ github.run_number }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifact name: \`app-debug-apk\` (available at bottom of this run summary)" >> "$GITHUB_STEP_SUMMARY"
