@@ -23,15 +23,35 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Accept Android SDK licenses
+      - name: Accept Android SDK licenses and install platform 35
         run: |
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo -e "\n24333f8a63b1d873ae03b00fa7b0ae69f11f1a57\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b1d873ae03b00fa7b0ae69f11f1a57" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --stacktrace --no-daemon --console=plain 2>&1 | tee build.log
+
+      - name: Print error diagnostics on failure
+        if: failure()
+        run: |
+          grep -n -E "What went wrong|FAILURE|error:|^e: |Unresolved|Execution failed" -A 6 build.log | head -n 120 || true
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: build.log
+          if-no-files-found: ignore
 
       - name: Verify APK output
         run: |
