@@ -1,8 +1,12 @@
 # Free Fire Tournament Arena Platform
 
-A comprehensive esports tournament management ecosystem consisting of:
-1. **Android App (`/app`)**: Built with Kotlin, Jetpack Compose, Material 3, and Coroutines/Flow.
-2. **Admin Web Console (`/admin-web`)**: Built with React 18, TypeScript, Vite, Tailwind CSS, and Lucide Icons.
+[![Download Android APK](https://img.shields.io/badge/Download-Android%20APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/Aritra-Sarkar-Dev/E-sports/releases/latest/download/app-debug.apk)
+[![Latest Release](https://img.shields.io/github/v/release/Aritra-Sarkar-Dev/E-sports?style=for-the-badge&label=Latest%20Release)](https://github.com/Aritra-Sarkar-Dev/E-sports/releases)
+
+### 📲 Direct APK Download Link
+👉 **[Download Latest APK (`app-debug.apk`)](https://github.com/Aritra-Sarkar-Dev/E-sports/releases/latest/download/app-debug.apk)**
+
+> **Note:** When new commits are pushed, GitHub Actions automatically compiles and publishes the latest `app-debug.apk` directly to [GitHub Releases](https://github.com/Aritra-Sarkar-Dev/E-sports/releases).
 
 ---
 

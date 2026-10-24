@@ -6,17 +6,28 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Checks if the user has an 'admin' or 'SuperAdmin' role in their /users/{uid} document
+    function hasUserDocAdminRole() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'Admin', 'SuperAdmin', 'Moderator'];
+    }
+
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.token.role in ['SuperAdmin', 'Moderator', 'Support'] ||
+        hasUserDocAdminRole() ||
+        request.auth.token.role in ['admin', 'Admin', 'SuperAdmin', 'Moderator', 'Support'] ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
 
     function isSuperAdmin() {
       return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SuperAdmin', 'superadmin']) ||
         request.auth.token.role == 'SuperAdmin' ||
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'SuperAdmin'
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'SuperAdmin')
       );
     }
 
@@ -37,11 +48,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
     }
 
-    // Users: Players can read and update their own profile, admins can manage
+    // Users: Players can read and update their own profile (cannot escalate role), admins can manage
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow update: if isOwner(userId) || isAdmin();
-      allow create, delete: if isAdmin();
+      allow create: if (isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == 'player')) || isAdmin();
+      allow update: if isAdmin() || (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])));
+      allow delete: if isAdmin();
     }
 
     // Coin Transactions (Ledger): Immutable audit trail
