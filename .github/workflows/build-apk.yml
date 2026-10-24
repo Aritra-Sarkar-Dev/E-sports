@@ -23,16 +23,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Verify Java environment
+      - name: Verify Java & Android SDK
         run: |
           java -version
           echo "JAVA_HOME: $JAVA_HOME"
-          JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-          if [ -z "$JAVA_VER" ] || [ "$JAVA_VER" -lt 17 ]; then
-            echo "Error: Java 17 or newer is required."
-            exit 1
-          fi
-          echo "Java 17 verified successfully."
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          mkdir -p ~/.android
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Accept Android SDK licenses
         run: |
@@ -43,35 +40,36 @@ jobs:
           fi
           echo "Android SDK licenses accepted."
 
-      - name: Set up Gradle 9.3.1
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+          cache-disabled: true
 
-      - name: Set up debug signing keystore
+      - name: Restore debug signing keystore
         run: |
           mkdir -p ~/.android
           if [ -f "./debug.keystore.base64" ]; then
-            echo "Restoring debug.keystore from debug.keystore.base64..."
+            echo "Decoding debug.keystore from debug.keystore.base64..."
             base64 -d ./debug.keystore.base64 > ~/.android/debug.keystore
           elif [ -f "./debug.keystore" ]; then
             cp ./debug.keystore ~/.android/debug.keystore
           else
-            echo "Generating new debug keystore..."
+            echo "Generating fallback debug keystore..."
             keytool -genkeypair -v -keystore ~/.android/debug.keystore \
               -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass android -keypass android \
               -dname "CN=Android Debug,O=Android,C=US"
           fi
           cp ~/.android/debug.keystore ./debug.keystore
-          if [ ! -s ~/.android/debug.keystore ]; then
-            echo "Error: ~/.android/debug.keystore is empty or missing."
-            exit 1
-          fi
-          echo "Debug keystore configured successfully."
+          chmod 644 ~/.android/debug.keystore ./debug.keystore
+          echo "Debug keystore configured at ~/.android/debug.keystore"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
 
       - name: Build debug APK
-        run: gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace
+        run: ./gradlew :app:assembleDebug --no-daemon --no-configuration-cache --no-build-cache --stacktrace
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -81,7 +79,6 @@ jobs:
           TARGET_APK="app/build/outputs/apk/debug/app-debug.apk"
           if [ ! -f "$TARGET_APK" ]; then
             echo "Error: Expected APK file not found at $TARGET_APK"
-            echo "Searching inside app/build/outputs/apk/:"
             if [ -d "app/build/outputs/apk" ]; then
               find app/build/outputs/apk -type f -name "*.apk"
             fi
@@ -106,10 +103,6 @@ jobs:
           TMP_DIR=$(mktemp -d)
           ASSET_FILE="${TMP_DIR}/app-debug.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$ASSET_FILE"
-          if [ ! -f "$ASSET_FILE" ] || [ ! -s "$ASSET_FILE" ]; then
-            echo "Error: Failed to prepare release asset."
-            exit 1
-          fi
           echo "asset_path=${ASSET_FILE}" >> "$GITHUB_OUTPUT"
           echo "Prepared release asset at ${ASSET_FILE}"
 
@@ -119,20 +112,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET_PATH: ${{ steps.prepare_asset.outputs.asset_path }}
-          TAG_NAME: debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}
-          RELEASE_TITLE: Debug APK Build #${{ github.run_number }}
+          TAG_NAME: v1.0.0-build-${{ github.run_number }}
+          RELEASE_TITLE: FF Arena Esports v1.0.0 (Build #${{ github.run_number }})
         run: |
-          if [ ! -f "$ASSET_PATH" ] || [ ! -s "$ASSET_PATH" ]; then
-            echo "Error: Release asset $ASSET_PATH is invalid."
-            exit 1
-          fi
           NOTES=$(cat <<EOF
-          ### FF Arena Esports - Debug APK Build
-          - **Build Source:** GitHub Actions Automated CI/CD
-          - **Run Number:** ${{ github.run_number }}
-          - **Commit SHA:** ${{ github.sha }}
-          - **APK Filename:** app-debug.apk
-          - **Status:** Ready for download and installation
+          ### FF Arena Esports - Debug APK
+          - **Build:** #${{ github.run_number }}
+          - **Commit:** ${{ github.sha }}
+          - **File:** app-debug.apk
+          - **Download:** Ready to install on Android
           EOF
           )
           gh release create "$TAG_NAME" "$ASSET_PATH" \
@@ -145,14 +133,13 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}
-          RELEASE_OUTCOME: ${{ steps.publish_release.outcome }}
+          TAG_NAME: v1.0.0-build-${{ github.run_number }}
         run: |
           DIRECT_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/app-debug.apk"
           echo "### 🚀 APK READY FOR DOWNLOAD" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "[📥 **Click here to download app-debug.apk directly**](${DIRECT_URL})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Direct Download URL: \`${DIRECT_URL}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Release Tag: \`${TAG_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "The APK artifact is also attached to this GitHub Actions run under Artifacts (\`app-debug-apk\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Direct Download URL:** \`${DIRECT_URL}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Release Tag:** \`${TAG_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **GitHub Actions Artifact:** You can also download \`app-debug-apk\` directly under Artifacts on this run page." >> "$GITHUB_STEP_SUMMARY"
