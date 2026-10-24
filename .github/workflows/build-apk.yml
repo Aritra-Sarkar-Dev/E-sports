@@ -23,30 +23,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Verify Java & Android SDK
-        run: |
-          java -version
-          echo "JAVA_HOME: $JAVA_HOME"
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          mkdir -p ~/.android
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
         run: |
-          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
-            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          elif [ -d "$ANDROID_HOME/tools/bin" ]; then
-            yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
-          fi
-          echo "Android SDK licenses accepted."
+          yes | sdkmanager --licenses || true
+          mkdir -p ~/.android
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
-          cache-disabled: true
-
-      - name: Restore debug signing keystore
+      - name: Configure debug signing keystore
         run: |
           mkdir -p ~/.android
           if [ -f "./debug.keystore.base64" ]; then
@@ -63,18 +49,15 @@ jobs:
           fi
           cp ~/.android/debug.keystore ./debug.keystore
           chmod 644 ~/.android/debug.keystore ./debug.keystore
-          echo "Debug keystore configured at ~/.android/debug.keystore"
+          echo "Debug keystore configured successfully."
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --no-configuration-cache --no-build-cache --stacktrace
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
-      - name: Verify debug APK output
+      - name: Verify APK output
         run: |
           TARGET_APK="app/build/outputs/apk/debug/app-debug.apk"
           if [ ! -f "$TARGET_APK" ]; then
@@ -94,7 +77,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
       - name: Prepare APK release asset
