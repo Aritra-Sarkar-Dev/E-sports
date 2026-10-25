@@ -5,9 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,9 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,15 +34,8 @@ fun RewardsScreen(
     onClaimMission: (MissionRecord) -> Unit,
     onRedeemStoreItem: (StoreRewardItem) -> Unit
 ) {
-    val weekDays = listOf(
-        1 to 20,
-        2 to 30,
-        3 to 40,
-        4 to 50,
-        5 to 60,
-        6 to 80,
-        7 to 200 // Mega Day 7
-    )
+    var activeSubTab by remember { mutableStateOf("Missions") }
+    val streakDays = listOf(25, 30, 40, 50, 60, 80, 150)
 
     LazyColumn(
         modifier = Modifier
@@ -56,303 +45,226 @@ fun RewardsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
     ) {
-        // Top Title
+        // Top Header
         item {
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(22.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Loyalty Rewards",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "REWARDS & COINS",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "Earn Free Coins, Unlock Frames & Free Custom Room Tickets",
+                    text = "Earn coins through matches, streaks & missions. Zero deposits.",
                     fontSize = 12.sp,
-                    color = TextMuted
+                    color = TextSecondary
                 )
             }
         }
 
-        // Coin Hero Banner
+        // Non-Cash policy notice
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(
-                        1.dp,
-                        Brush.linearGradient(listOf(GoldPrize.copy(alpha = 0.6f), ElectricViolet.copy(alpha = 0.3f))),
-                        RoundedCornerShape(24.dp)
-                    )
-                    .testTag("rewards_coin_hero"),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = CardSurface)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = ElevatedSurface,
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0xFF262013), CardSurface)
-                            )
-                        )
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("YOUR COIN BALANCE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted)
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldPrize, modifier = Modifier.size(32.dp))
-                                Text(
-                                    text = "$coins",
-                                    fontSize = 36.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = GoldPrize
-                                )
-                                Text("COINS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
-                            }
-                        }
-
-                        Button(
-                            onClick = onSpinWheelClick,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = FireOrange,
-                                contentColor = Color.White
-                            ),
-                            modifier = Modifier.testTag("rewards_spin_now_button")
-                        ) {
-                            Icon(Icons.Default.RotateRight, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Spin Now", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    // Disclaimer notice required by prompt
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(ChipBg)
-                            .padding(horizontal = 10.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = "ℹ Rewards coins are non-cash loyalty points and cannot be bought or converted to cash. Use them to redeem profile cosmetics and tournament tickets.",
-                            fontSize = 10.sp,
-                            color = TextMuted,
-                            lineHeight = 14.sp
-                        )
-                    }
+                    Icon(Icons.Default.Info, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Loyalty coins are non-cash game credits earned by playing and cannot be purchased or converted to real money.",
+                        fontSize = 10.sp,
+                        color = TextSecondary,
+                        lineHeight = 14.sp
+                    )
                 }
             }
         }
 
-        // 7-Day Streak Calendar
+        // Coin Balance Hero Card
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = CardSurface),
-                border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(CardBorder, CardBorder)))
+                border = androidx.compose.foundation.BorderStroke(1.dp, GoldCoins.copy(alpha = 0.5f))
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Column {
+                        Text("AVAILABLE LOYALTY COINS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "$coins", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(24.dp))
+                        }
+                        Text("Spendable on cosmetic items, badges and bonus tickets", fontSize = 10.sp, color = TextSecondary)
+                    }
+
+                    Button(
+                        onClick = { onSpinWheelClick() },
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldCoins.copy(alpha = 0.15f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldCoins.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(10.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text("DAILY SPIN", fontSize = 9.sp, fontWeight = FontWeight.Black, color = GoldCoins)
+                        }
+                    }
+                }
+            }
+        }
+
+        // FIXED 7-DAY LOGIN STREAK (Compact layout: title, subtitle, D1-D7 chips in row, Claim button, progress line)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = CardSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text("7-DAY LOGIN STREAK", fontSize = 14.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                            Text("Check-in daily without missing to claim Day 7 Mega Chest!", fontSize = 11.sp, color = TextMuted)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("7-DAY LOGIN STREAK", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
                         }
-
-                        Button(
-                            onClick = onDailyCheckIn,
-                            enabled = !hasCheckedInToday,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NeonLime,
-                                contentColor = Color.Black,
-                                disabledContainerColor = ChipBg,
-                                disabledContentColor = TextMuted
-                            ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("streak_claim_button")
-                        ) {
-                            Text(
-                                if (hasCheckedInToday) "Claimed ✓" else "Claim Today",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = if (hasCheckedInToday) "Checked in today!" else "Tap to claim today",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonLime
+                        )
                     }
 
-                    // 7 Days Row
-                    LazyRow(
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // D1 to D7 chips in a single row
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(weekDays) { (day, reward) ->
-                            val isPast = day < streakDay || (day == streakDay && hasCheckedInToday)
-                            val isCurrent = day == streakDay && !hasCheckedInToday
-                            val isDay7 = day == 7
+                        streakDays.forEachIndexed { index, reward ->
+                            val dayNum = index + 1
+                            val isPast = dayNum < streakDay || (dayNum == streakDay && hasCheckedInToday)
+                            val isCurrent = dayNum == streakDay && !hasCheckedInToday
 
                             Column(
                                 modifier = Modifier
-                                    .width(46.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .background(
                                         when {
                                             isPast -> NeonLime.copy(alpha = 0.15f)
-                                            isCurrent -> FireOrange.copy(alpha = 0.2f)
-                                            isDay7 -> GoldPrize.copy(alpha = 0.15f)
-                                            else -> ChipBg
+                                            isCurrent -> ElevatedSurface
+                                            else -> BgDark
                                         }
                                     )
                                     .border(
                                         1.dp,
                                         when {
-                                            isPast -> NeonLime
-                                            isCurrent -> FireOrange
-                                            isDay7 -> GoldPrize
+                                            isPast -> NeonLime.copy(alpha = 0.4f)
+                                            isCurrent -> GoldCoins
                                             else -> CardBorder
                                         },
-                                        RoundedCornerShape(12.dp)
+                                        RoundedCornerShape(10.dp)
                                     )
-                                    .padding(vertical = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    .padding(vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "D$day",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isPast) NeonLime else TextMuted
-                                )
-
-                                Icon(
-                                    imageVector = if (isDay7) Icons.Default.CardGiftcard else Icons.Default.MonetizationOn,
-                                    contentDescription = null,
-                                    tint = if (isPast) NeonLime else if (isDay7) GoldPrize else TextPrimary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-
-                                Text(
-                                    text = "+$reward",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isPast) NeonLime else TextPrimary
-                                )
+                                Text("D$dayNum", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                if (isPast) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(14.dp))
+                                } else {
+                                    Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(14.dp))
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("+$reward", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isPast) NeonLime else Color.White)
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Claim Today Button
+                    Button(
+                        onClick = { onDailyCheckIn() },
+                        enabled = !hasCheckedInToday,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NeonLime,
+                            disabledContainerColor = ElevatedSurface
+                        ),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        if (hasCheckedInToday) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Streak Claimed Today (+40 Coins)", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Claim Day $streakDay Streak (+40 Coins)", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
                         }
                     }
                 }
             }
         }
 
-        // Daily Missions
+        // Sub Tabs: Missions vs Store
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "DAILY MISSIONS",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 0.5.sp
-                )
-
-                missions.forEach { mission ->
-                    val isComplete = mission.current >= mission.target
-                    val progress = (mission.current.toFloat() / mission.target.toFloat()).coerceIn(0f, 1f)
-
-                    Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(CardSurface)
+                    .padding(4.dp)
+            ) {
+                listOf("Missions", "Cosmetics Store").forEach { subTab ->
+                    val isSelected = activeSubTab == subTab
+                    Surface(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CardSurface)
-                            .border(1.dp, CardBorder, RoundedCornerShape(14.dp))
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
+                            .clickable { activeSubTab = subTab },
+                        color = if (isSelected) NeonLime else Color.Transparent,
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(mission.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(GoldPrize.copy(alpha = 0.15f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text("+${mission.rewardCoins} Coins", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GoldPrize)
-                                }
-                            }
-
-                            // Progress bar
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(6.dp)
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(ChipBg)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth(progress)
-                                            .fillMaxHeight()
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(if (isComplete) NeonLime else ElectricViolet)
-                                    )
-                                }
-                                Text("${mission.current}/${mission.target}", fontSize = 11.sp, color = TextMuted)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Button(
-                            onClick = { onClaimMission(mission) },
-                            enabled = isComplete && !mission.isClaimed,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NeonLime,
-                                contentColor = Color.Black,
-                                disabledContainerColor = ChipBg,
-                                disabledContentColor = TextMuted
-                            ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("claim_mission_${mission.id}")
+                        Box(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                when {
-                                    mission.isClaimed -> "Claimed"
-                                    isComplete -> "Claim"
-                                    else -> "In Progress"
-                                },
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                text = subTab,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                color = if (isSelected) Color.Black else TextSecondary
                             )
                         }
                     }
@@ -360,97 +272,143 @@ fun RewardsScreen(
             }
         }
 
-        // Coin Store
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "COIN STORE (REDEEM PRIZES)",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 0.5.sp
-                )
+        // Content: Missions list
+        if (activeSubTab == "Missions") {
+            items(missions) { mission ->
+                val progress = (mission.current.toFloat() / mission.target).coerceIn(0f, 1f)
+                val isComplete = mission.current >= mission.target
 
-                storeItems.chunked(2).forEach { rowItems ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        rowItems.forEach { item ->
-                            val canAfford = coins >= item.coins
-
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .border(1.dp, CardBorder, RoundedCornerShape(16.dp))
-                                    .testTag("store_item_${item.id}"),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardSurface)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(mission.type.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = ElectricViolet)
+                                Text(mission.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            }
+                            Surface(
+                                color = GoldCoins.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, GoldCoins.copy(alpha = 0.4f))
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(14.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(56.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(ChipBg),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = when (item.category) {
-                                                "Ticket" -> Icons.Default.ConfirmationNumber
-                                                "Frame" -> Icons.Default.AccountBox
-                                                "Badge" -> Icons.Default.MilitaryTech
-                                                else -> Icons.Default.Palette
-                                            },
-                                            contentDescription = null,
-                                            tint = when (item.category) {
-                                                "Ticket" -> NeonLime
-                                                "Frame" -> ElectricViolet
-                                                "Badge" -> GoldPrize
-                                                else -> FireOrange
-                                            },
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-
-                                    Text(item.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text(item.description, fontSize = 10.sp, color = TextMuted, minLines = 2, maxLines = 2)
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text("${item.coins} Coins", fontSize = 12.sp, fontWeight = FontWeight.Black, color = GoldPrize)
-
-                                        Button(
-                                            onClick = { onRedeemStoreItem(item) },
-                                            enabled = canAfford,
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (canAfford) NeonLime else ChipBg,
-                                                contentColor = Color.Black,
-                                                disabledContainerColor = ChipBg,
-                                                disabledContentColor = TextMuted
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                            modifier = Modifier.height(30.dp)
-                                        ) {
-                                            Text(if (canAfford) "Redeem" else "Locked", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
+                                    Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("+${mission.rewardCoins}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = GoldCoins)
                                 }
                             }
                         }
 
-                        // Fill empty slot if odd
-                        if (rowItems.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(100.dp)
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(BgDark)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(progress)
+                                            .fillMaxHeight()
+                                            .background(NeonLime)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("${mission.current}/${mission.target}", fontSize = 10.sp, color = TextSecondary)
+                            }
+
+                            if (mission.isClaimed) {
+                                Text("Claimed", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            } else if (isComplete) {
+                                Button(
+                                    onClick = { onClaimMission(mission) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                ) {
+                                    Text("Claim", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                            } else {
+                                Text("In Progress", fontSize = 11.sp, color = TextSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Cosmetics Store
+            items(storeItems) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Surface(
+                                color = ElevatedSurface,
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = item.category.uppercase(),
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonLime,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(item.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Text(item.description, fontSize = 11.sp, color = TextSecondary)
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("${item.coins}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GoldCoins)
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Button(
+                                onClick = { onRedeemStoreItem(item) },
+                                enabled = coins >= item.coins,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = NeonLime,
+                                    disabledContainerColor = ElevatedSurface
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Text("Redeem", color = if (coins >= item.coins) Color.Black else TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }

@@ -7,9 +7,8 @@ data class EsportsMatch(
     val division: String, // Rookie, Mid, Pro, Open
     val map: String, // Bermuda, Purgatory, Kalahari, Alpine
     val startTimeText: String,
-    val entryFee: Int,
     val prizePool: Int,
-    val perKillPrize: Int,
+    val perKillXp: Int = 10,
     val maxSlots: Int,
     val joinedSlots: Int,
     val status: String, // Upcoming, Live, Completed
@@ -20,7 +19,7 @@ data class EsportsMatch(
     val isRoomRevealed: Boolean = false,
     val myRank: Int? = null,
     val myKills: Int? = null,
-    val myWinnings: Int? = null
+    val prizesWon: Int? = null
 )
 
 data class UserProfile(
@@ -36,26 +35,9 @@ data class UserProfile(
     val kills: Int,
     val kdRatio: Float,
     val winRate: Float,
-    val totalEarnings: Int,
+    val prizesWon: Int,
     val referralCode: String,
-    val linkedUpi: String,
-    val isKycVerified: Boolean
-)
-
-data class WalletInfo(
-    val deposit: Int,
-    val winnings: Int,
-    val bonus: Int,
-    val total: Int = deposit + winnings + bonus
-)
-
-data class TransactionRecord(
-    val id: String,
-    val title: String,
-    val type: String, // deposit, winning, entry_fee, withdrawal, bonus
-    val amount: Int,
-    val timeText: String,
-    val isPositive: Boolean
+    val role: String = "player" // player, organizer, admin
 )
 
 data class MissionRecord(
@@ -73,14 +55,16 @@ data class StoreRewardItem(
     val title: String,
     val category: String,
     val coins: Int,
-    val description: String
+    val description: String,
+    val isPurchased: Boolean = false
 )
 
 data class LeaderboardRow(
     val rank: Int,
     val name: String,
     val ign: String,
-    val earnings: Int,
+    val points: Int,
+    val prizesWon: Int,
     val wins: Int,
     val kills: Int
 )
@@ -90,6 +74,33 @@ data class InAppNotification(
     val title: String,
     val message: String,
     val timeAgo: String,
-    val type: String,
+    val type: String, // room, system, reward, match
     val isRead: Boolean
+)
+
+data class TournamentRegistration(
+    val id: String,
+    val tournamentId: String,
+    val tournamentTitle: String,
+    val ign: String,
+    val ffUid: String,
+    val registeredAt: String = "Just now",
+    val status: String = "Confirmed"
+)
+
+data class PublishedResult(
+    val tournamentId: String,
+    val firstIgn: String,
+    val firstUid: String,
+    val firstKills: Int,
+    val firstPrize: String,
+    val secondIgn: String,
+    val secondUid: String,
+    val secondKills: Int,
+    val secondPrize: String,
+    val thirdIgn: String,
+    val thirdUid: String,
+    val thirdKills: Int,
+    val thirdPrize: String,
+    val publishedAt: String = "Just now"
 )

@@ -343,9 +343,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
           )}
         </div>
 
-        {/* Floating Pill Bottom Navigation (Strictly 4 tabs with lime glow) */}
+        {/* Floating Pill Bottom Navigation (Strictly 4 tabs: lime pill with label, inactive icon only) */}
         <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-[400px]">
-          <nav className="bg-[#14141F]/90 backdrop-blur-xl border border-[#262640] rounded-full p-1.5 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+          <nav className="bg-[#14141F]/95 backdrop-blur-xl border border-[#262640] rounded-full p-1.5 flex items-center justify-around shadow-[0_8px_32px_rgba(0,0,0,0.85)]">
             {[
               { id: 'home', label: 'Home', icon: Home },
               { id: 'matches', label: 'Matches', icon: Trophy },
@@ -358,19 +358,17 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
                 <button
                   key={tab.id}
                   onClick={() => setCurrentTab(tab.id as any)}
-                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-full transition-all duration-300 relative ${
+                  className={`flex items-center justify-center transition-all duration-300 min-h-[44px] ${
                     isActive
-                      ? 'text-[#C8FF3D] font-black'
-                      : 'text-[#A7A7C0] hover:text-white font-medium'
+                      ? 'bg-[#C8FF3D] text-black font-extrabold px-4 py-2 rounded-full shadow-[0_0_16px_rgba(200,255,61,0.35)] gap-1.5'
+                      : 'text-[#A7A7C0] hover:text-white p-2.5 rounded-full hover:bg-white/5'
                   }`}
+                  aria-label={tab.label}
                 >
-                  {/* Active lime glow backing pill */}
+                  <Icon className="w-5 h-5 shrink-0" />
                   {isActive && (
-                    <div className="absolute inset-0 bg-[#C8FF3D]/15 rounded-full border border-[#C8FF3D]/40 shadow-[0_0_15px_rgba(200,255,61,0.25)] -z-10" />
+                    <span className="text-xs font-black tracking-wide leading-none">{tab.label}</span>
                   )}
-
-                  <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-                  <span className="text-[10px] mt-0.5 tracking-tight">{tab.label}</span>
                 </button>
               );
             })}

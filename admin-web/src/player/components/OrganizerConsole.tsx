@@ -36,8 +36,8 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
   onShowToast,
 }) => {
   const [activeSection, setActiveSection] = useState<
-    'create' | 'rooms' | 'registrations' | 'results' | 'announcements'
-  >('create');
+    'dashboard' | 'create' | 'rooms' | 'registrations' | 'results' | 'announcements'
+  >('dashboard');
 
   // --- Section 1: Create Tournament State ---
   const [title, setTitle] = useState('');
@@ -273,6 +273,7 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
       {/* Horizontal Section Switcher (Scrollable) */}
       <div className="bg-[#0E0E17] border-b border-[#23233A] px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
         {[
+          { id: 'dashboard', label: 'Dashboard', icon: Layers },
           { id: 'create', label: 'Create', icon: PlusCircle },
           { id: 'rooms', label: 'Room ID & Pass', icon: Key },
           { id: 'registrations', label: 'Registrations', icon: Users },
@@ -300,6 +301,160 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
 
       {/* Section Content Area (Scrollable) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-lg mx-auto w-full pb-20">
+        {/* ============================================================== */}
+        {/* SECTION 0: DASHBOARD (COUNTS & METRICS)                       */}
+        {/* ============================================================== */}
+        {activeSection === 'dashboard' && (
+          <div className="space-y-4 animate-fade-in">
+            {/* 4 Overview Count Cards */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="bg-[#14141F] border border-[#262640] p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between text-[#A7A7C0]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Tournaments</span>
+                  <Trophy className="w-4 h-4 text-[#C8FF3D]" />
+                </div>
+                <div className="text-2xl font-black text-white">{matches.length}</div>
+                <span className="text-[9px] text-[#C8FF3D] font-bold">
+                  {matches.filter((m) => m.status === 'Live').length} Live Now
+                </span>
+              </div>
+
+              <div className="bg-[#14141F] border border-[#262640] p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between text-[#A7A7C0]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Registered</span>
+                  <Users className="w-4 h-4 text-[#7B5CFF]" />
+                </div>
+                <div className="text-2xl font-black text-white">{registrations.length}</div>
+                <span className="text-[9px] text-[#7B5CFF] font-bold">Active Contestants</span>
+              </div>
+
+              <div className="bg-[#14141F] border border-[#262640] p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between text-[#A7A7C0]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Sponsor Pools</span>
+                  <Sparkles className="w-4 h-4 text-[#FFB800]" />
+                </div>
+                <div className="text-2xl font-black text-white">
+                  ₹{matches.reduce((sum, m) => sum + m.prizePool, 0).toLocaleString()}
+                </div>
+                <span className="text-[9px] text-[#A7A7C0]">100% Sponsor Funded</span>
+              </div>
+
+              <div className="bg-[#14141F] border border-[#262640] p-3.5 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between text-[#A7A7C0]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Room Security</span>
+                  <Key className="w-4 h-4 text-[#00E5FF]" />
+                </div>
+                <div className="text-2xl font-black text-white">
+                  {matches.filter((m) => m.roomId).length}/{matches.length}
+                </div>
+                <span className="text-[9px] text-[#00E5FF] font-bold">Rooms Configured</span>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setActiveSection('create')}
+                className="py-2.5 px-3 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(200,255,61,0.25)] flex items-center justify-center gap-1.5 transition-all"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Create Cup</span>
+              </button>
+              <button
+                onClick={() => setActiveSection('rooms')}
+                className="py-2.5 px-3 bg-[#1B1B2B] hover:bg-[#262640] text-white border border-[#262640] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Key className="w-4 h-4 text-[#C8FF3D]" />
+                <span>Set Room ID</span>
+              </button>
+            </div>
+
+            {/* Tournaments Management List */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-white uppercase tracking-wider">
+                  Managed Tournaments ({matches.length})
+                </span>
+                <button
+                  onClick={onRefreshMatches}
+                  className="text-[11px] text-[#C8FF3D] flex items-center gap-1 font-bold"
+                >
+                  <RefreshCw className="w-3 h-3" /> Refresh
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {matches.map((m) => (
+                  <div
+                    key={m.id}
+                    className="bg-[#14141F] border border-[#262640] rounded-2xl p-3.5 space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={`px-2 py-0.5 text-[9px] font-black rounded-full uppercase ${
+                            m.status === 'Live'
+                              ? 'bg-[#FF4D6D] text-white'
+                              : m.status === 'Completed'
+                              ? 'bg-slate-700 text-slate-300'
+                              : 'bg-[#C8FF3D]/20 text-[#C8FF3D]'
+                          }`}>
+                            {m.status}
+                          </span>
+                          <span className="text-[10px] text-[#7B5CFF] font-bold">
+                            {m.sponsorName}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-black text-white">{m.title}</h4>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs font-black text-white block">
+                          ₹{m.prizePool.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] text-[#A7A7C0]">
+                          {m.joinedSlots}/{m.maxSlots} Slots
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-[#262640] text-[10px]">
+                      <div className="flex items-center gap-2 text-[#A7A7C0]">
+                        <span>Room: <strong className={m.roomId ? 'text-[#C8FF3D]' : 'text-slate-500'}>{m.roomId || 'Not set'}</strong></span>
+                        <span>•</span>
+                        <span>{m.mode} ({m.map})</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedRoomMatchId(m.id);
+                            setRoomIdInput(m.roomId || '');
+                            setRoomPasswordInput(m.roomPassword || '');
+                            setActiveSection('rooms');
+                          }}
+                          className="text-[#C8FF3D] font-bold hover:underline"
+                        >
+                          Config Room
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedResultMatchId(m.id);
+                            setActiveSection('results');
+                          }}
+                          className="text-[#7B5CFF] font-bold hover:underline"
+                        >
+                          Results
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ============================================================== */}
         {/* SECTION 1: CREATE TOURNAMENT                                   */}
         {/* ============================================================== */}

@@ -28,7 +28,6 @@ import com.example.ui.theme.*
 @Composable
 fun MatchDetailModal(
     match: EsportsMatch,
-    userWallet: WalletInfo,
     onDismiss: () -> Unit,
     onJoinClick: () -> Unit,
     onCopyRoomCredentials: () -> Unit
@@ -60,12 +59,12 @@ fun MatchDetailModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(match.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary, maxLines = 1)
-                        Text("${match.map} • ${match.mode} • ${match.startTimeText}", fontSize = 11.sp, color = TextMuted)
+                        Text(match.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary, maxLines = 1)
+                        Text("${match.map} • ${match.mode} • Sponsor: ${match.sponsor}", fontSize = 11.sp, color = TextSecondary)
                     }
 
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
@@ -74,7 +73,7 @@ fun MatchDetailModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(ChipBg)
+                        .background(ElevatedSurface)
                         .padding(3.dp)
                 ) {
                     detailTabs.forEach { tab ->
@@ -91,125 +90,147 @@ fun MatchDetailModal(
                             Text(
                                 text = tab,
                                 fontSize = 11.sp,
-                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSel) Color.Black else TextMuted
+                                fontWeight = if (isSel) FontWeight.Black else FontWeight.Bold,
+                                color = if (isSel) Color.Black else TextSecondary
                             )
                         }
                     }
                 }
 
-                // Tab Content
+                // Content Switcher
                 Box(modifier = Modifier.weight(1f)) {
                     when (selectedTab) {
                         "Overview" -> {
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 item {
-                                    // Room Details card if registered
-                                    if (match.isJoined) {
-                                        Card(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(16.dp),
-                                            colors = CardDefaults.cardColors(containerColor = ChipBg),
-                                            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(ElectricViolet, NeonLime)))
-                                        ) {
-                                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                Text("CUSTOM ROOM ACCESS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ElectricViolet)
-                                                if (match.isRoomRevealed && match.roomId != null) {
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
+                                    // Room Credentials Card
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (match.roomId != null) NeonLime.copy(alpha = 0.5f) else CardBorder)
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.VpnKey, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text("CUSTOM ROOM ACCESS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                                                }
+                                                if (match.roomId != null) {
+                                                    Surface(
+                                                        color = NeonLime.copy(alpha = 0.2f),
+                                                        shape = RoundedCornerShape(8.dp)
                                                     ) {
-                                                        Column {
-                                                            Text("Room ID: ${match.roomId}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                                                            Text("Password: ${match.roomPass}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                                                        }
-                                                        Button(
-                                                            onClick = onCopyRoomCredentials,
-                                                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black),
-                                                            shape = RoundedCornerShape(8.dp)
-                                                        ) {
-                                                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
-                                                            Spacer(modifier = Modifier.width(4.dp))
-                                                            Text("Copy", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                        }
+                                                        Text("UNLOCKED", fontSize = 9.sp, fontWeight = FontWeight.Black, color = NeonLime, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                                     }
                                                 } else {
-                                                    Text(
-                                                        "Room ID & Password will be unlocked 10 minutes prior to match schedule. Keep the app open to receive room credentials.",
-                                                        fontSize = 12.sp,
-                                                        color = TextMuted
-                                                    )
+                                                    Text("Reveals 15m prior", fontSize = 10.sp, color = TextSecondary)
                                                 }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            if (match.roomId != null) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Column {
+                                                        Text("Room ID: ${match.roomId}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                                        Text("Password: ${match.roomPass ?: "ffpro"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                                    }
+                                                    Button(
+                                                        onClick = onCopyRoomCredentials,
+                                                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                                        shape = RoundedCornerShape(10.dp),
+                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                                    ) {
+                                                        Text("Copy", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                                    }
+                                                }
+                                            } else {
+                                                Text(
+                                                    "Credentials are encrypted and automatically unlock for registered players 15 minutes before the match start time.",
+                                                    fontSize = 11.sp,
+                                                    color = TextSecondary,
+                                                    lineHeight = 15.sp
+                                                )
                                             }
                                         }
                                     }
                                 }
 
                                 item {
-                                    // Quick Stats Table
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(ChipBg)
-                                            .padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    // 3 Highlights: Free Entry, Prize Pool, Per kill
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Total Prize Pool", fontSize = 12.sp, color = TextMuted)
-                                            Text("₹${match.prizePool}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldPrize)
+                                        Card(
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                                        ) {
+                                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Entry", fontSize = 9.sp, color = TextSecondary)
+                                                Text("FREE", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                                            }
                                         }
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Per Kill Bounty", fontSize = 12.sp, color = TextMuted)
-                                            Text("₹${match.perKillPrize}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FireOrange)
+
+                                        Card(
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                                        ) {
+                                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Sponsor Pool", fontSize = 9.sp, color = TextSecondary)
+                                                Text("₹${match.prizePool}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                            }
                                         }
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Entry Fee", fontSize = 12.sp, color = TextMuted)
-                                            Text(if (match.entryFee == 0) "FREE" else "₹${match.entryFee}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeonLime)
-                                        }
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Map / Mode", fontSize = 12.sp, color = TextMuted)
-                                            Text("${match.map} • ${match.mode}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+
+                                        Card(
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                                        ) {
+                                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text("Per Kill", fontSize = 9.sp, color = TextSecondary)
+                                                Text("+10 XP", fontSize = 13.sp, fontWeight = FontWeight.Black, color = ElectricViolet)
+                                            }
                                         }
                                     }
-                                }
-
-                                item {
-                                    Text("Organizer Note", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text(
-                                        "Matches are hosted in official Free Fire custom esports rooms. All participants must enter room 5 minutes before scheduled match start. Teaming and cheating will result in permanent ban.",
-                                        fontSize = 11.sp,
-                                        color = TextMuted
-                                    )
                                 }
                             }
                         }
 
                         "Prize Table" -> {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item {
-                                    Text("POSITION REWARDS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted)
-                                }
                                 val prizeDistribution = listOf(
-                                    "1st Place (Booyah)" to (match.prizePool * 0.45).toInt(),
-                                    "2nd Place" to (match.prizePool * 0.25).toInt(),
-                                    "3rd Place" to (match.prizePool * 0.15).toInt(),
-                                    "4th - 5th Place" to (match.prizePool * 0.05).toInt(),
-                                    "Per Kill Bounty" to match.perKillPrize
+                                    "1st Place (Booyah)" to "₹${(match.prizePool * 0.5).toInt()} Trophy + Kit",
+                                    "2nd Place" to "₹${(match.prizePool * 0.3).toInt()} Trophy",
+                                    "3rd Place" to "₹${(match.prizePool * 0.2).toInt()} Trophy",
+                                    "Per Kill Reward" to "+10 XP to Gamer Profile"
                                 )
                                 items(prizeDistribution) { (pos, reward) ->
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(ChipBg)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(ElevatedSurface)
                                             .padding(12.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(pos, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                        Text("₹$reward", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GoldPrize)
+                                        Text(reward, fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
                                     }
                                 }
                             }
@@ -218,14 +239,14 @@ fun MatchDetailModal(
                         "Rules" -> {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val rules = listOf(
-                                    "1. Mobile players only. PC emulators, iPads, and tablets are strictly prohibited.",
-                                    "2. In-game name and FF UID must match your registered profile.",
-                                    "3. Teaming with opponents or using any 3rd party scripts results in permanent hardware ban.",
-                                    "4. Screenshot submission is mandatory in case of disputes.",
-                                    "5. Payouts are credited instantly to your winnings wallet within 15 minutes of match completion."
+                                    "1. 100% Free Entry tournament sponsored by ${match.sponsor}.",
+                                    "2. Mobile players only. PC emulators and third-party recoil scripts result in permanent ban.",
+                                    "3. In-game name and FF UID must match your registered profile.",
+                                    "4. Teaming up in Solo or collusion will forfeit any sponsor prize.",
+                                    "5. Room credentials unlock 15 minutes before the match."
                                 )
                                 items(rules) { rule ->
-                                    Text(rule, fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp)
+                                    Text(rule, fontSize = 11.sp, color = TextPrimary, lineHeight = 16.sp)
                                 }
                             }
                         }
@@ -233,7 +254,7 @@ fun MatchDetailModal(
                         "Players" -> {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 item {
-                                    Text("Registered Players (${match.joinedSlots}/${match.maxSlots})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+                                    Text("Registered Players (${match.joinedSlots}/${match.maxSlots})", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                                 }
                                 val samplePlayers = listOf(
                                     "⚡NEON_SOUL⚡" to "Team Neon",
@@ -248,7 +269,7 @@ fun MatchDetailModal(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(ChipBg)
+                                            .background(ElevatedSurface)
                                             .padding(10.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
@@ -259,7 +280,7 @@ fun MatchDetailModal(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(28.dp)
+                                                    .size(26.dp)
                                                     .clip(CircleShape)
                                                     .background(NeonLime.copy(alpha = 0.15f)),
                                                 contentAlignment = Alignment.Center
@@ -268,7 +289,7 @@ fun MatchDetailModal(
                                             }
                                             Text(ign, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                                         }
-                                        Text(team, fontSize = 11.sp, color = TextMuted)
+                                        Text(team, fontSize = 11.sp, color = TextSecondary)
                                     }
                                 }
                             }
@@ -276,7 +297,7 @@ fun MatchDetailModal(
                     }
                 }
 
-                // Bottom Action
+                // Bottom Join Action
                 if (match.status == "Upcoming" && !match.isJoined && match.joinedSlots < match.maxSlots) {
                     Button(
                         onClick = {
@@ -291,7 +312,7 @@ fun MatchDetailModal(
                         colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
                     ) {
                         Text(
-                            text = if (match.entryFee == 0) "Join For Free" else "Join Match • ₹${match.entryFee}",
+                            text = "Join Free Tournament",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -305,19 +326,15 @@ fun MatchDetailModal(
 @Composable
 fun JoinMatchModal(
     match: EsportsMatch,
-    wallet: WalletInfo,
     userProfile: UserProfile,
     onDismiss: () -> Unit,
-    onConfirmJoin: (String, List<String>) -> Unit,
-    onAddMoney: () -> Unit
+    onConfirmJoin: (String, List<String>) -> Unit
 ) {
     var inGameName by remember { mutableStateOf(userProfile.ign) }
     var teammate1 by remember { mutableStateOf("") }
     var teammate2 by remember { mutableStateOf("") }
     var teammate3 by remember { mutableStateOf("") }
     var agreeTerms by remember { mutableStateOf(true) }
-
-    val hasEnoughBalance = wallet.total >= match.entryFee
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -342,32 +359,36 @@ fun JoinMatchModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("JOIN TOURNAMENT", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                        Text("${match.title} • ${match.mode}", fontSize = 11.sp, color = TextMuted)
+                        Text("FREE TOURNAMENT ENTRY", fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                        Text("${match.title} • ${match.mode}", fontSize = 11.sp, color = TextSecondary)
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
-                // Balance summary
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(ChipBg)
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Free Entry Pill
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = ElevatedSurface,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, NeonLime.copy(alpha = 0.4f))
                 ) {
-                    Column {
-                        Text("Entry Fee", fontSize = 11.sp, color = TextMuted)
-                        Text(if (match.entryFee == 0) "FREE" else "₹${match.entryFee}", fontSize = 15.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Wallet Balance", fontSize = 11.sp, color = TextMuted)
-                        Text("₹${wallet.total}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (hasEnoughBalance) TextPrimary else LiveRed)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Entry Fee", fontSize = 10.sp, color = TextSecondary)
+                            Text("100% FREE ENTRY", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        }
+                        Surface(
+                            color = NeonLime,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("SPONSORED", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
                     }
                 }
 
@@ -375,7 +396,7 @@ fun JoinMatchModal(
                 OutlinedTextField(
                     value = inGameName,
                     onValueChange = { inGameName = it },
-                    label = { Text("Your Free Fire IGN", fontSize = 12.sp) },
+                    label = { Text("Your Free Fire IGN", fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -392,7 +413,7 @@ fun JoinMatchModal(
                     OutlinedTextField(
                         value = teammate1,
                         onValueChange = { teammate1 = it },
-                        label = { Text("Teammate 1 FF UID / IGN", fontSize = 12.sp) },
+                        label = { Text("Teammate 1 FF UID / IGN", fontSize = 11.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonLime, unfocusedBorderColor = CardBorder),
@@ -404,7 +425,7 @@ fun JoinMatchModal(
                     OutlinedTextField(
                         value = teammate2,
                         onValueChange = { teammate2 = it },
-                        label = { Text("Teammate 2 FF UID / IGN", fontSize = 12.sp) },
+                        label = { Text("Teammate 2 FF UID / IGN", fontSize = 11.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonLime, unfocusedBorderColor = CardBorder),
@@ -414,7 +435,7 @@ fun JoinMatchModal(
                     OutlinedTextField(
                         value = teammate3,
                         onValueChange = { teammate3 = it },
-                        label = { Text("Teammate 3 FF UID / IGN", fontSize = 12.sp) },
+                        label = { Text("Teammate 3 FF UID / IGN", fontSize = 11.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonLime, unfocusedBorderColor = CardBorder),
@@ -435,45 +456,28 @@ fun JoinMatchModal(
                         onCheckedChange = { agreeTerms = it },
                         colors = CheckboxDefaults.colors(checkedColor = NeonLime, checkmarkColor = Color.Black)
                     )
-                    Text("I confirm I am 18+ and agree to Fair Play & Anti-Cheat rules.", fontSize = 11.sp, color = TextMuted)
+                    Text("I confirm I am 18+ and agree to Fair Play & Anti-Cheat rules.", fontSize = 11.sp, color = TextSecondary)
                 }
 
-                // Action buttons
-                if (!hasEnoughBalance && match.entryFee > 0) {
-                    Button(
-                        onClick = {
-                            onDismiss()
-                            onAddMoney()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = FireOrange, contentColor = Color.White)
-                    ) {
-                        Text("Low Balance • Add ₹${match.entryFee - wallet.total}", fontSize = 14.sp, fontWeight = FontWeight.Black)
-                    }
-                } else {
-                    Button(
-                        onClick = {
-                            val teammates = listOfNotNull(
-                                teammate1.takeIf { it.isNotBlank() },
-                                teammate2.takeIf { it.isNotBlank() },
-                                teammate3.takeIf { it.isNotBlank() }
-                            )
-                            onConfirmJoin(inGameName, teammates)
-                            onDismiss()
-                        },
-                        enabled = agreeTerms && inGameName.isNotBlank(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .testTag("confirm_join_match_button"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
-                    ) {
-                        Text("Confirm Registration", fontSize = 14.sp, fontWeight = FontWeight.Black)
-                    }
+                Button(
+                    onClick = {
+                        val teammates = listOfNotNull(
+                            teammate1.takeIf { it.isNotBlank() },
+                            teammate2.takeIf { it.isNotBlank() },
+                            teammate3.takeIf { it.isNotBlank() }
+                        )
+                        onConfirmJoin(inGameName, teammates)
+                        onDismiss()
+                    },
+                    enabled = agreeTerms && inGameName.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("confirm_join_match_button"),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
+                ) {
+                    Text("Reserve Free Slot", fontSize = 14.sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -513,16 +517,16 @@ fun SpinWheelModal(
                 ) {
                     Text("DAILY LUCKY SPIN", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
                 // Spin Visual Display
                 Box(
                     modifier = Modifier
-                        .size(160.dp)
+                        .size(150.dp)
                         .clip(CircleShape)
-                        .background(Brush.sweepGradient(listOf(GoldPrize, FireOrange, ElectricViolet, NeonLime, GoldPrize)))
+                        .background(Brush.sweepGradient(listOf(GoldCoins, StreakOrange, ElectricViolet, NeonLime, GoldCoins)))
                         .border(4.dp, CardSurface, CircleShape)
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
@@ -541,24 +545,24 @@ fun SpinWheelModal(
                             Icon(
                                 Icons.Default.MonetizationOn,
                                 contentDescription = null,
-                                tint = GoldPrize,
-                                modifier = Modifier.size(36.dp)
+                                tint = GoldCoins,
+                                modifier = Modifier.size(32.dp)
                             )
                             Text(
                                 if (wonCoins != null) "+$wonCoins" else "WIN UP TO",
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Black,
-                                color = GoldPrize
+                                color = GoldCoins
                             )
-                            Text("200 COINS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("200 COINS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                     }
                 }
 
                 Text(
-                    text = if (wonCoins != null) "🎉 You won $wonCoins Coins! Credited to rewards." else "Spin once every 24 hours to win bonus loyalty coins.",
-                    fontSize = 12.sp,
-                    color = if (wonCoins != null) NeonLime else TextMuted
+                    text = if (wonCoins != null) "🎉 You won $wonCoins Loyalty Coins!" else "Spin once every 24 hours to win bonus loyalty coins.",
+                    fontSize = 11.sp,
+                    color = if (wonCoins != null) NeonLime else TextSecondary
                 )
 
                 Button(
@@ -577,234 +581,6 @@ fun SpinWheelModal(
                     colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
                 ) {
                     Text(if (wonCoins != null) "Claimed Today ✓" else "SPIN NOW", fontSize = 14.sp, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AddMoneyModal(
-    onDismiss: () -> Unit,
-    onConfirmAdd: (Int) -> Unit
-) {
-    var amountText by remember { mutableStateOf("100") }
-    val presets = listOf(50, 100, 200, 500)
-    var selectedUpi by remember { mutableStateOf("PhonePe") }
-    val upiApps = listOf("PhonePe", "Google Pay", "Paytm", "BHIM UPI")
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
-                .testTag("add_money_modal"),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = CardSurface)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("ADD MONEY TO WALLET", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
-                    }
-                }
-
-                // Amount Input
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { amountText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Deposit Amount (₹)", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = NeonLime,
-                        unfocusedBorderColor = CardBorder,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                // Presets
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    presets.forEach { preset ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (amountText == "$preset") NeonLime.copy(alpha = 0.2f) else ChipBg)
-                                .border(1.dp, if (amountText == "$preset") NeonLime else CardBorder, RoundedCornerShape(10.dp))
-                                .clickable { amountText = "$preset" }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("+₹$preset", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (amountText == "$preset") NeonLime else TextPrimary)
-                        }
-                    }
-                }
-
-                // UPI Apps
-                Text("SELECT UPI APP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    upiApps.forEach { app ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selectedUpi == app) ChipBg else Color.Transparent)
-                                .border(1.dp, if (selectedUpi == app) NeonLime else CardBorder, RoundedCornerShape(10.dp))
-                                .clickable { selectedUpi = app }
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(app, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                            RadioButton(
-                                selected = selectedUpi == app,
-                                onClick = { selectedUpi = app },
-                                colors = RadioButtonDefaults.colors(selectedColor = NeonLime)
-                            )
-                        }
-                    }
-                }
-
-                val amountInt = amountText.toIntOrNull() ?: 0
-
-                Button(
-                    onClick = {
-                        if (amountInt > 0) {
-                            onConfirmAdd(amountInt)
-                            onDismiss()
-                        }
-                    },
-                    enabled = amountInt >= 10,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("proceed_deposit_button"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
-                ) {
-                    Text("Proceed to Pay ₹$amountInt", fontSize = 14.sp, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun WithdrawModal(
-    currentWinnings: Int,
-    linkedUpi: String,
-    onDismiss: () -> Unit,
-    onConfirmWithdraw: (Int, String) -> Unit
-) {
-    var amountText by remember { mutableStateOf("100") }
-    var upiId by remember { mutableStateOf(linkedUpi) }
-    val amountInt = amountText.toIntOrNull() ?: 0
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
-                .testTag("withdraw_modal"),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = CardSurface)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("INSTANT UPI WITHDRAWAL", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
-                    }
-                }
-
-                // Balance info
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(ChipBg)
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text("Withdrawable Winnings", fontSize = 11.sp, color = TextMuted)
-                        Text("₹$currentWinnings", fontSize = 16.sp, fontWeight = FontWeight.Black, color = GoldPrize)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Minimum", fontSize = 11.sp, color = TextMuted)
-                        Text("₹100", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    }
-                }
-
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { amountText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Withdrawal Amount (₹)", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrize, unfocusedBorderColor = CardBorder),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                OutlinedTextField(
-                    value = upiId,
-                    onValueChange = { upiId = it },
-                    label = { Text("UPI ID (e.g. name@okhdfcbank)", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GoldPrize, unfocusedBorderColor = CardBorder),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Text(
-                    "⚡ Payouts are transferred automatically via UPI within 60 seconds with 0% deduction fees.",
-                    fontSize = 11.sp,
-                    color = TextMuted
-                )
-
-                Button(
-                    onClick = {
-                        if (amountInt in 100..currentWinnings && upiId.isNotBlank()) {
-                            onConfirmWithdraw(amountInt, upiId)
-                            onDismiss()
-                        }
-                    },
-                    enabled = amountInt in 100..currentWinnings && upiId.isNotBlank(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("confirm_withdraw_button"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = GoldPrize, contentColor = Color.Black)
-                ) {
-                    Text("Withdraw ₹$amountInt to UPI", fontSize = 14.sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -844,10 +620,10 @@ fun LeaderboardModal(
                 ) {
                     Column {
                         Text("HALL OF CHAMPIONS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                        Text("Top Free Fire players & cash earnings", fontSize = 11.sp, color = TextMuted)
+                        Text("Top Free Fire players & sponsor trophies", fontSize = 11.sp, color = TextSecondary)
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
@@ -856,7 +632,7 @@ fun LeaderboardModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(ChipBg)
+                        .background(ElevatedSurface)
                         .padding(3.dp)
                 ) {
                     periods.forEach { period ->
@@ -870,27 +646,8 @@ fun LeaderboardModal(
                                 .padding(vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(period, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else TextMuted)
+                            Text(period, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else TextSecondary)
                         }
-                    }
-                }
-
-                // Top 3 Podium
-                val top3 = rows.take(3)
-                if (top3.size >= 3) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        // Rank 2 (Silver)
-                        PodiumColumn(top3[1], height = 80.dp, color = Color(0xFFC0C0C0), rank = 2)
-                        // Rank 1 (Gold)
-                        PodiumColumn(top3[0], height = 110.dp, color = GoldPrize, rank = 1)
-                        // Rank 3 (Bronze)
-                        PodiumColumn(top3[2], height = 70.dp, color = Color(0xFFCD7F32), rank = 3)
                     }
                 }
 
@@ -899,12 +656,12 @@ fun LeaderboardModal(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    items(rows.drop(3)) { row ->
+                    items(rows) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(ChipBg)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ElevatedSurface)
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -913,41 +670,18 @@ fun LeaderboardModal(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("#${row.rank}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                                Text("#${row.rank}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (row.rank == 1) NeonLime else TextSecondary)
                                 Column {
                                     Text(row.ign, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text("${row.wins} Wins • ${row.kills} Kills", fontSize = 10.sp, color = TextMuted)
+                                    Text("${row.wins} Booyah • ${row.kills} Kills", fontSize = 10.sp, color = TextSecondary)
                                 }
                             }
 
-                            Text("₹${row.earnings}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GoldPrize)
+                            Text("${row.prizesWon} Prizes Won", fontSize = 12.sp, fontWeight = FontWeight.Black, color = GoldCoins)
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun PodiumColumn(row: LeaderboardRow, height: androidx.compose.ui.unit.Dp, color: Color, rank: Int) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(row.ign.take(8), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary, maxLines = 1)
-        Text("₹${row.earnings}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = color)
-
-        Box(
-            modifier = Modifier
-                .width(68.dp)
-                .height(height)
-                .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                .background(color.copy(alpha = 0.25f))
-                .border(1.dp, color, RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = color)
         }
     }
 }
@@ -982,11 +716,11 @@ fun NotificationsModal(
                 ) {
                     Column {
                         Text("NOTIFICATIONS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                        Text("Tournament reminders & wallet updates", fontSize = 11.sp, color = TextMuted)
+                        Text("Tournament reminders & room alerts", fontSize = 11.sp, color = TextSecondary)
                     }
 
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
@@ -1012,7 +746,7 @@ fun NotificationsModal(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (!notif.isRead) NeonLime.copy(alpha = 0.08f) else ChipBg)
+                                .background(if (!notif.isRead) NeonLime.copy(alpha = 0.08f) else ElevatedSurface)
                                 .border(1.dp, if (!notif.isRead) NeonLime.copy(alpha = 0.3f) else CardBorder, RoundedCornerShape(12.dp))
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -1024,8 +758,8 @@ fun NotificationsModal(
                                     .background(
                                         when (notif.type) {
                                             "match" -> ElectricViolet.copy(alpha = 0.2f)
-                                            "wallet" -> NeonLime.copy(alpha = 0.2f)
-                                            else -> FireOrange.copy(alpha = 0.2f)
+                                            "room" -> NeonLime.copy(alpha = 0.2f)
+                                            else -> GoldCoins.copy(alpha = 0.2f)
                                         }
                                     ),
                                 contentAlignment = Alignment.Center
@@ -1033,14 +767,14 @@ fun NotificationsModal(
                                 Icon(
                                     imageVector = when (notif.type) {
                                         "match" -> Icons.Default.SportsEsports
-                                        "wallet" -> Icons.Default.AccountBalanceWallet
+                                        "room" -> Icons.Default.VpnKey
                                         else -> Icons.Default.Campaign
                                     },
                                     contentDescription = null,
                                     tint = when (notif.type) {
                                         "match" -> ElectricViolet
-                                        "wallet" -> NeonLime
-                                        else -> FireOrange
+                                        "room" -> NeonLime
+                                        else -> GoldCoins
                                     },
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -1048,8 +782,8 @@ fun NotificationsModal(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(notif.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                Text(notif.message, fontSize = 11.sp, color = TextMuted)
-                                Text(notif.timeAgo, fontSize = 9.sp, color = TextMuted, modifier = Modifier.padding(top = 2.dp))
+                                Text(notif.message, fontSize = 11.sp, color = TextSecondary)
+                                Text(notif.timeAgo, fontSize = 9.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
                             }
                         }
                     }
@@ -1092,21 +826,21 @@ fun ReportModal(
                 ) {
                     Column {
                         Text("DISPUTE / REPORT", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                        Text(match?.title ?: "Select tournament to dispute", fontSize = 11.sp, color = TextMuted)
+                        Text(match?.title ?: "Select tournament to dispute", fontSize = 11.sp, color = TextSecondary)
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                     }
                 }
 
-                Text("REASON FOR DISPUTE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+                Text("REASON FOR DISPUTE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     reasons.forEach { r ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (reason == r) ChipBg else Color.Transparent)
+                                .background(if (reason == r) ElevatedSurface else Color.Transparent)
                                 .clickable { reason = r }
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -1114,7 +848,7 @@ fun ReportModal(
                             RadioButton(
                                 selected = reason == r,
                                 onClick = { reason = r },
-                                colors = RadioButtonDefaults.colors(selectedColor = FireOrange)
+                                colors = RadioButtonDefaults.colors(selectedColor = NeonLime)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(r, fontSize = 12.sp, color = TextPrimary)
@@ -1129,7 +863,7 @@ fun ReportModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(90.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = FireOrange, unfocusedBorderColor = CardBorder),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonLime, unfocusedBorderColor = CardBorder),
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -1142,9 +876,9 @@ fun ReportModal(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = FireOrange, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
                 ) {
-                    Text("Submit Report to Referee", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("Submit Report to Referee", fontSize = 14.sp, fontWeight = FontWeight.Black)
                 }
             }
         }

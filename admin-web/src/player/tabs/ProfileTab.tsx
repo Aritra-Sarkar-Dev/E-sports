@@ -52,6 +52,19 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [editUid, setEditUid] = useState(profile.ffUid);
   const [showFairPlay, setShowFairPlay] = useState(false);
   const [showResponsibleGaming, setShowResponsibleGaming] = useState(false);
+  const longPressTimerRef = React.useRef<any>(null);
+
+  const handleAvatarPressStart = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      onOpenOrganizerConsole();
+    }, 600);
+  };
+
+  const handleAvatarPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+  };
 
   const handleCopyUid = () => {
     onCopyText(profile.ffUid);
@@ -82,8 +95,16 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         {/* Profile Card Overlay */}
         <div className="px-4 -mt-12 relative z-10">
           <div className="bg-[#14141F] border border-[#262640] rounded-[24px] p-4 shadow-2xl flex flex-col items-center text-center">
-            {/* Avatar with glowing frame */}
-            <div className="relative -mt-10 mb-2">
+            {/* Avatar with glowing frame + long-press shortcut to Organizer Console */}
+            <div
+              className="relative -mt-10 mb-2 cursor-pointer select-none active:scale-95 transition-transform"
+              title="Long-press to open Organizer Console"
+              onMouseDown={handleAvatarPressStart}
+              onMouseUp={handleAvatarPressEnd}
+              onMouseLeave={handleAvatarPressEnd}
+              onTouchStart={handleAvatarPressStart}
+              onTouchEnd={handleAvatarPressEnd}
+            >
               <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#C8FF3D] via-[#7B5CFF] to-[#C8FF3D] shadow-[0_0_20px_rgba(200,255,61,0.3)]">
                 <img
                   src={profile.avatarUrl}
@@ -333,6 +354,30 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               />
             </button>
           </div>
+
+          {/* Organizer Console row (Always visible for demo) */}
+          <button
+            onClick={onOpenOrganizerConsole}
+            className="w-full p-3.5 flex items-center justify-between hover:bg-[#1B1B2B] text-left transition-colors group"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-[#C8FF3D]/20 flex items-center justify-center text-[#C8FF3D] group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-white block">Organizer Console</span>
+                  <span className="px-1.5 py-0.2 bg-[#C8FF3D] text-black text-[9px] font-black rounded-full uppercase tracking-wider">
+                    DEMO
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#A7A7C0]">
+                  Create tournaments, set room ID/password & publish results
+                </span>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#C8FF3D]" />
+          </button>
 
           {/* Switch to Admin Console */}
           <button

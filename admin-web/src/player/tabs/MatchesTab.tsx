@@ -101,22 +101,22 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
 
       {/* Horizontal Scrolling Sub Tabs without clipping */}
       <div className="px-4">
-        <div className="flex bg-[#14141F] p-1 rounded-2xl border border-[#262640] overflow-x-auto no-scrollbar">
+        <div className="flex bg-[#14141F] p-1 rounded-2xl border border-[#262640] overflow-x-auto no-scrollbar gap-1">
           {(['Upcoming', 'Live', 'Completed', 'My Matches'] as const).map((tab) => {
             const isSelected = activeSubTab === tab;
             return (
               <button
                 key={tab}
                 onClick={() => setActiveSubTab(tab)}
-                className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+                className={`py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap transition-all shrink-0 flex-1 text-center ${
                   isSelected
-                    ? 'bg-[#C8FF3D] text-black shadow-[0_0_12px_rgba(200,255,61,0.25)]'
+                    ? 'bg-[#C8FF3D] text-black shadow-[0_0_12px_rgba(200,255,61,0.25)] font-black'
                     : 'text-[#A7A7C0] hover:text-white'
                 }`}
               >
                 {tab}
                 {tab === 'My Matches' && myMatchesCount > 0 && (
-                  <span className={`ml-1 text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                  <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-black ${
                     isSelected ? 'bg-black text-[#C8FF3D]' : 'bg-[#C8FF3D]/20 text-[#C8FF3D]'
                   }`}>
                     {myMatchesCount}
@@ -283,6 +283,8 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
         ) : (
           filteredMatches.map((match) => {
             const slotsPercent = Math.min(100, (match.joinedSlots / match.maxSlots) * 100);
+            const remainingSlots = match.maxSlots - match.joinedSlots;
+            const isUrgentSlots = remainingSlots > 0 && remainingSlots <= Math.ceil(match.maxSlots * 0.1);
             const mapAccent = MAP_ACCENTS[match.map] || '#C8FF3D';
             const isFull = match.joinedSlots >= match.maxSlots;
 
@@ -355,12 +357,12 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
                   <div className="flex items-center gap-2 flex-1 mr-3">
                     <div className="flex-1 max-w-[120px] bg-[#0A0A0F] h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#7B5CFF] to-[#C8FF3D]"
+                        className={`h-full ${isUrgentSlots ? 'bg-[#FF4D6D]' : 'bg-gradient-to-r from-[#7B5CFF] to-[#C8FF3D]'}`}
                         style={{ width: `${slotsPercent}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-[#A7A7C0] font-mono shrink-0">
-                      {match.joinedSlots}/{match.maxSlots}
+                    <span className={`text-[10px] font-mono shrink-0 ${isUrgentSlots ? 'text-[#FF4D6D] font-extrabold animate-pulse' : 'text-[#A7A7C0]'}`}>
+                      {isUrgentSlots ? `${remainingSlots} slots left!` : `${match.joinedSlots}/${match.maxSlots}`}
                     </span>
                   </div>
 

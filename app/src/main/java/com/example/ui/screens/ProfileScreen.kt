@@ -1,12 +1,12 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,42 +18,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.model.UserProfile
 import com.example.ui.theme.*
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProfileScreen(
     profile: UserProfile,
     onCopyUid: () -> Unit,
     onCopyReferral: () -> Unit,
-    onOpenKyc: () -> Unit,
     onOpenEditProfile: () -> Unit,
+    onOpenOrganizerConsole: () -> Unit,
+    onToggleRole: () -> Unit,
     onOpenSettings: (String) -> Unit
 ) {
-    val xpProgress = (profile.xp.toFloat() / profile.maxXp.toFloat()).coerceIn(0f, 1f)
-
-    val stats = listOf(
-        "MATCHES" to "${profile.matches}",
-        "VICTORIES" to "${profile.wins}",
-        "TOTAL KILLS" to "${profile.kills}",
-        "K/D RATIO" to "${profile.kdRatio}",
-        "WIN RATE" to "${profile.winRate}%",
-        "COINS" to "${profile.totalEarnings}"
-    )
-
-    val badges = listOf(
-        "Headshot King" to Icons.Default.GpsFixed,
-        "Squad Leader" to Icons.Default.Groups,
-        "Clutch God" to Icons.Default.FlashOn,
-        "Grandmaster" to Icons.Default.MilitaryTech,
-        "Top Player" to Icons.Default.EmojiEvents
-    )
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -62,126 +43,127 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
     ) {
-        // Hero Profile Card
+        // Profile Card with Glowing Avatar (Supports long-press shortcut to Console)
         item {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
-                    .testTag("profile_hero_card"),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = CardSurface)
+                colors = CardDefaults.cardColors(containerColor = CardSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Cover Banner
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(90.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(ElectricViolet.copy(alpha = 0.5f), FireOrange.copy(alpha = 0.5f), NeonLime.copy(alpha = 0.3f))
-                                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF17113D), CardSurface)
                             )
-                    )
-
-                    // Avatar & Info Overlay
+                        )
+                        .padding(16.dp)
+                ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = (-36).dp)
-                            .padding(horizontal = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Avatar with glowing border
+                        // Avatar with long-press hidden shortcut
                         Box(
                             modifier = Modifier
                                 .size(76.dp)
                                 .clip(CircleShape)
                                 .background(CardSurface)
-                                .border(3.dp, NeonLime, CircleShape)
-                                .padding(4.dp),
+                                .border(2.dp, NeonLime, CircleShape)
+                                .combinedClickable(
+                                    onClick = { onOpenEditProfile() },
+                                    onLongClick = { onOpenOrganizerConsole() }
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(listOf(ElectricViolet, FireOrange))
-                                    ),
-                                contentAlignment = Alignment.Center
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile Avatar (Long press for Organizer Console)",
+                                tint = NeonLime,
+                                modifier = Modifier.size(44.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = profile.name,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = NeonLime.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, NeonLime.copy(alpha = 0.4f))
                             ) {
                                 Text(
-                                    text = profile.name.take(2).uppercase(),
-                                    fontSize = 24.sp,
+                                    text = profile.rankTier,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = Color.White
+                                    color = NeonLime,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        // Username & IGN
-                        Text(
-                            text = profile.ign,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black,
-                            color = TextPrimary
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                        Text(
-                            text = profile.name,
-                            fontSize = 12.sp,
-                            color = TextMuted
-                        )
-
-                        // Free Fire UID Chip with copy
                         Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(ChipBg)
-                                .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
-                                .clickable { onCopyUid() }
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("FF UID: ${profile.ffUid}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FireOrange)
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy UID", tint = FireOrange, modifier = Modifier.size(12.dp))
+                            Text(
+                                text = profile.ign,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonLime
+                            )
+                            Text("•", color = TextSecondary)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { onCopyUid() }
+                            ) {
+                                Text("UID: ${profile.ffUid}", fontSize = 11.sp, color = TextSecondary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy UID", tint = TextSecondary, modifier = Modifier.size(12.dp))
+                            }
                         }
 
-                        // Level & XP Bar
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // XP Progress Bar
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ElevatedSurface)
+                                .padding(10.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Level ${profile.level} • ${profile.rankTier}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                Text("${profile.xp} / ${profile.maxXp} XP", fontSize = 11.sp, color = TextMuted)
+                                Text("Level ${profile.level}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                Text("${profile.xp}/${profile.maxXp} XP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
-
+                            Spacer(modifier = Modifier.height(6.dp))
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp))
-                                    .background(ChipBg)
+                                    .background(BgDark)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(xpProgress)
+                                        .fillMaxWidth(profile.xp.toFloat() / profile.maxXp)
                                         .fillMaxHeight()
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(Brush.horizontalGradient(listOf(ElectricViolet, NeonLime)))
+                                        .background(NeonLime)
                                 )
                             }
                         }
@@ -190,110 +172,124 @@ fun ProfileScreen(
             }
         }
 
-        // Stats Grid (6 Items)
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "LIFETIME ESPORTS STATS",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 0.5.sp
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    stats.chunked(3).forEach { rowStats ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowStats.forEach { (label, value) ->
-                                Card(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .border(1.dp, CardBorder, RoundedCornerShape(14.dp)),
-                                    colors = CardDefaults.cardColors(containerColor = CardSurface),
-                                    shape = RoundedCornerShape(14.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 12.dp, horizontal = 8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+        // Dedicated Organizer Console Button (Shown ONLY when user.role is 'admin' or 'organizer')
+        if (profile.role == "organizer" || profile.role == "admin") {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenOrganizerConsole() },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, NeonLime)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(listOf(Color(0xFF17113D), CardSurface))
+                            )
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(NeonLime.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = NeonLime, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Organizer Console", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        color = NeonLime,
+                                        shape = RoundedCornerShape(6.dp)
                                     ) {
-                                        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextMuted)
                                         Text(
-                                            value,
-                                            fontSize = 16.sp,
+                                            profile.role.uppercase(),
+                                            fontSize = 9.sp,
                                             fontWeight = FontWeight.Black,
-                                            color = if (label == "COINS") GoldPrize else TextPrimary
+                                            color = Color.Black,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
+                                Text("Create tournaments, set room ID, publish results", fontSize = 10.sp, color = TextSecondary)
                             }
                         }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
                     }
                 }
             }
         }
 
-        // Achievements / Badges Strip
+        // 6-Metric Stats Grid (NO real-money earnings! "PRIZES WON" count)
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "HONOR BADGES & TROPHIES",
-                    fontSize = 14.sp,
+                    text = "CAREER STATISTICS",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 0.5.sp
+                    color = Color.White,
+                    letterSpacing = 1.sp
                 )
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(badges) { (name, icon) ->
-                        Column(
-                            modifier = Modifier
-                                .width(88.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CardSurface)
-                                .border(1.dp, CardBorder, RoundedCornerShape(14.dp))
-                                .padding(vertical = 12.dp, horizontal = 6.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(NeonLime.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(icon, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
-                            }
-                            Text(
-                                name,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary,
-                                maxLines = 1
-                            )
-                        }
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard("Matches", "${profile.matches}", modifier = Modifier.weight(1f))
+                    StatCard("Booyah", "${profile.wins}", tint = NeonLime, modifier = Modifier.weight(1f))
+                    StatCard("Kills", "${profile.kills}", modifier = Modifier.weight(1f))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard("K/D Ratio", "${profile.kdRatio}", modifier = Modifier.weight(1f))
+                    StatCard("Win Rate", "${profile.winRate}%", tint = ElectricViolet, modifier = Modifier.weight(1f))
+                    StatCard("PRIZES WON", "${profile.prizesWon}", tint = GoldCoins, modifier = Modifier.weight(1f))
                 }
             }
         }
 
-        // Referral Card
+        // Badges: "Top Player" (renamed from Top Earner)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "EARNED BADGES",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 1.sp
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BadgeCard("👑", "Top Player", "Tier 1 Elite", NeonLime, modifier = Modifier.weight(1f))
+                    BadgeCard("⚡", "Booyah Master", "10+ Victories", ElectricViolet, modifier = Modifier.weight(1f))
+                    BadgeCard("🎯", "Sharpshooter", "150+ Headshots", Color.White, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+
+        // Referral Card (Coins only, no cash bonus!)
         item {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, Brush.horizontalGradient(listOf(NeonLime.copy(alpha = 0.4f), ElectricViolet.copy(alpha = 0.4f))), RoundedCornerShape(16.dp))
-                    .testTag("referral_card"),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = CardSurface)
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = CardSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
             ) {
                 Row(
                     modifier = Modifier
@@ -302,91 +298,134 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("INVITE FRIENDS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                        Text("Share your code and both of you get 100 bonus coins.", fontSize = 11.sp, color = TextMuted)
+                    Column {
+                        Text("INVITE FRIENDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("Both of you get 100 bonus coins", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("Code: ${profile.referralCode}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
                     }
 
                     Button(
-                        onClick = onCopyReferral,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NeonLime,
-                            contentColor = Color.Black
-                        ),
-                        modifier = Modifier.testTag("copy_referral_button")
+                        onClick = { onCopyReferral() },
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text(profile.referralCode, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text("Share", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
                     }
                 }
             }
         }
 
-        // Settings & Info List
+        // Settings & Policies (Always visible Organizer Console demo row + Demo toggle)
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "SETTINGS & SUPPORT",
-                    fontSize = 14.sp,
+                    text = "SETTINGS & POLICIES",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
-                    color = TextPrimary,
-                    letterSpacing = 0.5.sp
+                    color = Color.White,
+                    letterSpacing = 1.sp
                 )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(CardSurface)
-                        .border(1.dp, CardBorder, RoundedCornerShape(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
-                    SettingItem(
-                        icon = Icons.Default.Edit,
-                        title = "Edit Gamer Profile",
-                        subtitle = "IGN, Free Fire UID, Avatar",
-                        onClick = onOpenEditProfile
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
+                    Column {
+                        // Demo Toggle: switch to organizer role
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Tune, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("Demo: switch to organizer role", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("Role: ${profile.role.uppercase()}", fontSize = 10.sp, color = TextSecondary)
+                                }
+                            }
 
-                    SettingItem(
-                        icon = Icons.Default.Notifications,
-                        title = "Notification Preferences",
-                        subtitle = "Match reminders, room passwords, alerts",
-                        onClick = { onOpenSettings("notifications") }
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
+                            Switch(
+                                checked = profile.role == "organizer" || profile.role == "admin",
+                                onCheckedChange = { onToggleRole() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.Black,
+                                    checkedTrackColor = NeonLime,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = CardBorder
+                                )
+                            )
+                        }
 
-                    SettingItem(
-                        icon = Icons.Default.Security,
-                        title = "Fair Play & Anti-Cheat Policy",
-                        subtitle = "Free entry. Prizes are sponsor-funded.",
-                        onClick = { onOpenSettings("fairplay") }
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
+                        Divider(color = CardBorder, thickness = 1.dp)
 
-                    SettingItem(
-                        icon = Icons.Default.Policy,
-                        title = "Terms of Service & Privacy Policy",
-                        subtitle = "18+ age verification & legal disclaimers",
-                        onClick = { onOpenSettings("terms") }
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
+                        // Organizer Console row (ALWAYS VISIBLE FOR DEMO with DEMO badge)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenOrganizerConsole() }
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Security, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Organizer Console", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            color = NeonLime,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text("DEMO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    Text("Create tournaments, set room ID, publish results", fontSize = 10.sp, color = TextSecondary)
+                                }
+                            }
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = NeonLime, modifier = Modifier.size(18.dp))
+                        }
 
-                    SettingItem(
-                        icon = Icons.Default.SupportAgent,
-                        title = "24/7 Gamer Support & Telegram",
-                        subtitle = "Fast ticket response for room issues",
-                        onClick = { onOpenSettings("support") }
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
+                        Divider(color = CardBorder, thickness = 1.dp)
 
-                    SettingItem(
-                        icon = Icons.Default.Logout,
-                        title = "Log Out",
-                        subtitle = "Sign out of your session",
-                        isDestructive = true,
-                        onClick = { onOpenSettings("logout") }
-                    )
+                        // Fair Play & Anti-cheat
+                        SettingsItem(
+                            icon = Icons.Default.Shield,
+                            title = "Fair Play & Anti-Cheat Protocol",
+                            subtitle = "Free entry. Prizes are sponsor-funded.",
+                            onClick = { onOpenSettings("fairplay") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Responsible Gaming & 18+ Rules
+                        SettingsItem(
+                            icon = Icons.Default.VerifiedUser,
+                            title = "Responsible Gaming & 18+ Rules",
+                            subtitle = "Certified non-gambling esports competition",
+                            onClick = { onOpenSettings("terms") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Help & Support
+                        SettingsItem(
+                            icon = Icons.Default.HelpOutline,
+                            title = "Help & Dispute Support",
+                            subtitle = "24/7 Referee assistance",
+                            onClick = { onOpenSettings("support") }
+                        )
+                    }
                 }
             }
         }
@@ -394,61 +433,78 @@ fun ProfileScreen(
 }
 
 @Composable
-fun SettingItem(
-    icon: ImageVector,
+fun StatCard(
+    label: String,
+    value: String,
+    tint: Color = Color.White,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = CardSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(label, fontSize = 9.sp, color = TextSecondary)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Black, color = tint)
+        }
+    }
+}
+
+@Composable
+fun BadgeCard(
+    emoji: String,
     title: String,
     subtitle: String,
-    isDestructive: Boolean = false,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = CardSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(emoji, fontSize = 20.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(title, fontSize = 10.sp, fontWeight = FontWeight.Black, color = tint)
+            Text(subtitle, fontSize = 8.sp, color = TextSecondary)
+        }
+    }
+}
+
+@Composable
+fun SettingsItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(if (isDestructive) LiveRed.copy(alpha = 0.12f) else ChipBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isDestructive) LiveRed else NeonLime,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(
-                    text = title,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isDestructive) LiveRed else TextPrimary
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = TextMuted
-                )
+                Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(subtitle, fontSize = 10.sp, color = TextSecondary)
             }
         }
-
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = TextMuted,
-            modifier = Modifier.size(18.dp)
-        )
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
     }
 }

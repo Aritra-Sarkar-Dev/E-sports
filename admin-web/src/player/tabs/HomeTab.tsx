@@ -84,12 +84,28 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [activeBanner, setActiveBanner] = useState(0);
   const [selectedGameMode, setSelectedGameMode] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [roomCountdown, setRoomCountdown] = useState('12:30');
 
   // Auto-sliding banner
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveBanner((prev) => (prev + 1) % CAROUSEL_BANNERS.length);
     }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Room countdown timer ticker (12:30 -> 00:00)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRoomCountdown((prev) => {
+        const [m, s] = prev.split(':').map(Number);
+        if (m === 0 && s === 0) return '00:00';
+        const total = m * 60 + s - 1;
+        const nm = Math.floor(total / 60);
+        const ns = total % 60;
+        return `${String(nm).padStart(2, '0')}:${String(ns).padStart(2, '0')}`;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -161,8 +177,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       </div>
 
       <div className="px-4 space-y-4">
-        {/* Banner Carousel */}
-        <div className="relative rounded-[24px] overflow-hidden border border-[#262640] shadow-2xl h-44">
+        {/* Banner Carousel with Join Free button & Sponsor Label */}
+        <div className="relative rounded-[24px] overflow-hidden border border-[#262640] shadow-2xl h-48">
           {CAROUSEL_BANNERS.map((banner, idx) => (
             <div
               key={banner.id}
@@ -175,8 +191,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 alt={banner.title}
                 className="w-full h-full object-cover brightness-50"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/60 to-transparent p-4 flex flex-col justify-end">
-                <div className="flex items-center gap-2 mb-1.5">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/70 to-transparent p-4 flex flex-col justify-end">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider shadow">
                     {banner.tag}
                   </span>
@@ -187,25 +203,35 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 <h3 className="text-base font-black text-white leading-tight mb-1">
                   {banner.title}
                 </h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.4)]">
-                    {banner.prizeLabel}
-                  </span>
-                  <span className="text-[10px] text-[#7B5CFF] font-bold">
-                    • Sponsor-funded prize
-                  </span>
+                <div className="flex items-center justify-between mt-1">
+                  <div>
+                    <span className="text-xs font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.4)] block">
+                      {banner.prizeLabel}
+                    </span>
+                    <span className="text-[9px] text-[#7B5CFF] font-bold">
+                      • Sponsor-funded prize
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => onSelectCategory('Upcoming')}
+                    className="px-3.5 py-1.5 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-black text-xs rounded-xl shadow-[0_0_12px_rgba(200,255,61,0.35)] active:scale-95 transition-all flex items-center gap-1 z-30"
+                  >
+                    <span>Join Free</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
           ))}
 
           {/* Dots navigation */}
-          <div className="absolute bottom-2.5 right-4 z-20 flex gap-1">
+          <div className="absolute top-3 right-4 z-20 flex gap-1">
             {CAROUSEL_BANNERS.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 rounded-full transition-all ${
-                  activeBanner === i ? 'w-4 bg-[#C8FF3D]' : 'w-1 bg-white/30'
+                className={`h-1.5 rounded-full transition-all ${
+                  activeBanner === i ? 'w-5 bg-[#C8FF3D]' : 'w-1.5 bg-white/30'
                 }`}
               />
             ))}
@@ -267,7 +293,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </button>
         </div>
 
-        {/* Pinned "Next Match / My Match" Card */}
+        {/* Pinned "Next Match / My Match" Countdown Card */}
         {myJoinedMatch && (
           <div
             onClick={() => onOpenMatchDetail(myJoinedMatch)}
@@ -277,13 +303,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#C8FF3D] animate-ping" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#C8FF3D]">
-                  REGISTERED MATCH KICK-OFF
+                  NEXT MATCH KICK-OFF
                 </span>
               </div>
-              <span className="text-[10px] text-[#A7A7C0] flex items-center gap-1">
+              <div className="flex items-center gap-1 text-[10px] bg-[#0A0A0F] border border-[#262640] px-2.5 py-0.5 rounded-full font-mono text-[#C8FF3D]">
                 <Clock className="w-3 h-3 text-[#C8FF3D]" />
-                {myJoinedMatch.status === 'Live' ? 'LIVE NOW' : 'Starting Soon'}
-              </span>
+                <span>Room reveals in {roomCountdown}</span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -299,11 +325,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   <span className="text-white font-bold">
                     ₹{myJoinedMatch.prizePool.toLocaleString()} Pool
                   </span>
+                  <span>•</span>
+                  <span className="text-[#7B5CFF] font-bold">Sponsor-funded</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-black text-[#C8FF3D] bg-[#C8FF3D]/15 px-2.5 py-1 rounded-xl border border-[#C8FF3D]/30">
+                <span className="text-[11px] font-black text-[#C8FF3D] bg-[#C8FF3D]/15 px-2.5 py-1.5 rounded-xl border border-[#C8FF3D]/30 shadow">
                   View Room
                 </span>
                 <ChevronRight className="w-4 h-4 text-[#C8FF3D] group-hover:translate-x-1 transition-transform" />
@@ -312,24 +340,27 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         )}
 
-        {/* Game Mode Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          {gameModes.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => {
-                setSelectedGameMode(mode.id);
-                onSelectCategory(mode.id);
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                selectedGameMode === mode.id
-                  ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] shadow-[0_0_12px_rgba(200,255,61,0.25)]'
-                  : 'bg-[#14141F] text-[#A7A7C0] border-[#262640] hover:text-white'
-              }`}
-            >
-              {mode.label}
-            </button>
-          ))}
+        {/* Game Mode Filters (With fade edge and pr-8 so last chip never clips) */}
+        <div className="relative">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 pr-8">
+            {gameModes.map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => {
+                  setSelectedGameMode(mode.id);
+                  onSelectCategory(mode.id);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+                  selectedGameMode === mode.id
+                    ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] shadow-[0_0_12px_rgba(200,255,61,0.25)]'
+                    : 'bg-[#14141F] text-[#A7A7C0] border-[#262640] hover:text-white'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0A0A0F] to-transparent" />
         </div>
 
         {/* Section 1: LIVE NOW (Urgent/Live) */}

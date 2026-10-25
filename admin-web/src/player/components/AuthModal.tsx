@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { PlayerProfile } from '../types';
 import { AuthService } from '../../services/authService';
-import { ShieldCheck, User, Mail, Lock, Gamepad2, Hash, X, Check, ArrowRight } from 'lucide-react';
+import { ShieldCheck, User, Mail, Lock, Gamepad2, Hash, X, Check, ArrowRight, Shield } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (user: PlayerProfile) => void;
+  onOpenOrganizerDirectly?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+export const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  onOpenOrganizerDirectly,
+}) => {
+  const [mode, setMode] = useState<'login' | 'signup' | 'organizer'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -28,6 +34,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     setLoading(true);
 
     try {
+      if (mode === 'organizer') {
+        const cleanEmail = email.trim().toLowerCase();
+        if (cleanEmail === 'organizer@demo.com' || cleanEmail === 'admin@demo.com') {
+          const orgProfile: PlayerProfile = {
+            ...AuthService.getCurrentUser(),
+            name: cleanEmail === 'admin@demo.com' ? 'Tournament Director' : 'Arena Match Referee',
+            email: cleanEmail,
+            role: cleanEmail === 'admin@demo.com' ? 'admin' : 'organizer',
+          };
+          AuthService.setCurrentUser(orgProfile);
+          onSuccess(orgProfile);
+          if (onOpenOrganizerDirectly) {
+            onOpenOrganizerDirectly();
+          }
+          onClose();
+          return;
+        } else {
+          throw new Error('Invalid organizer credentials. Try organizer@demo.com or admin@demo.com (DEMO).');
+        }
+      }
+
       if (mode === 'login') {
         if (!email) throw new Error('Please enter your email.');
         const user = await AuthService.login(email, password);
@@ -70,6 +97,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     }
   };
 
+  const handleDemoOrganizerLogin = (asAdmin: boolean = false) => {
+    const role = asAdmin ? 'admin' : 'organizer';
+    const email = asAdmin ? 'admin@demo.com' : 'organizer@demo.com';
+    const name = asAdmin ? 'Platform Director' : 'Arena Organizer';
+    const orgProfile: PlayerProfile = {
+      ...AuthService.getCurrentUser(),
+      name,
+      email,
+      role,
+    };
+    AuthService.setCurrentUser(orgProfile);
+    onSuccess(orgProfile);
+    if (onOpenOrganizerDirectly) {
+      onOpenOrganizerDirectly();
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
       <div className="w-full max-w-sm bg-[#14141F] border border-[#262640] rounded-[28px] overflow-hidden shadow-2xl flex flex-col relative max-h-[92vh]">
@@ -77,14 +122,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         <div className="p-4 border-b border-[#262640] flex items-center justify-between bg-[#1B1B2B]">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/20 border border-[#C8FF3D]/40 flex items-center justify-center text-[#C8FF3D]">
-              <Gamepad2 className="w-4 h-4" />
+              {mode === 'organizer' ? <ShieldCheck className="w-4 h-4 text-[#C8FF3D]" /> : <Gamepad2 className="w-4 h-4" />}
             </div>
             <div>
               <h3 className="text-sm font-black text-white">
-                {mode === 'login' ? 'Player Sign In' : 'Create Player Account'}
+                {mode === 'login' ? 'Player Sign In' : mode === 'signup' ? 'Create Player Account' : 'Organizer Portal'}
               </h3>
               <span className="text-[10px] text-[#C8FF3D] font-bold block">
-                Free-Entry Esports Hub
+                {mode === 'organizer' ? 'Tournament Management Console' : 'Free-Entry Esports Hub'}
               </span>
             </div>
           </div>
@@ -118,7 +163,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 : 'text-[#A7A7C0] hover:text-white'
             }`}
           >
-            New Account
+            New Player
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('organizer'); setError(null); }}
+            className={`px-3 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 ${
+              mode === 'organizer'
+                ? 'bg-[#14141F] text-[#7B5CFF] border border-[#7B5CFF]/40'
+                : 'text-[#A7A7C0] hover:text-white'
+            }`}
+          >
+            <span>Organizer</span>
+            <span className="text-[8px] px-1 py-0.2 bg-[#C8FF3D] text-black font-black rounded">DEMO</span>
           </button>
         </div>
 
@@ -196,7 +253,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="player@esports.gg"
+                placeholder={mode === 'organizer' ? 'organizer@demo.com' : 'player@esports.gg'}
                 className="w-full bg-[#0A0A0F] border border-[#262640] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-[#A7A7C0] focus:outline-none focus:border-[#C8FF3D]"
               />
             </div>
@@ -236,19 +293,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             disabled={loading}
             className="w-full py-2.5 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(200,255,61,0.25)] flex items-center justify-center gap-1.5 transition-all active:scale-95 mt-2"
           >
-            <span>{loading ? 'Please wait...' : mode === 'login' ? 'Log In to Lobby' : 'Create Free Account'}</span>
+            <span>
+              {loading
+                ? 'Please wait...'
+                : mode === 'organizer'
+                ? 'Open Organizer Console'
+                : mode === 'login'
+                ? 'Log In to Lobby'
+                : 'Create Free Account'}
+            </span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
-          {/* Quick Demo Login */}
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full py-2 bg-[#1B1B2B] hover:bg-[#262640] text-[#C8FF3D] border border-[#C8FF3D]/30 font-bold text-xs rounded-xl transition-all text-center"
-          >
-            ⚡ Quick Demo Sign In (Aritra - NeonSoul)
-          </button>
+          {/* Quick Demo Sign Ins */}
+          {mode !== 'organizer' ? (
+            <div className="space-y-1.5 pt-1">
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full py-2 bg-[#1B1B2B] hover:bg-[#262640] text-[#C8FF3D] border border-[#C8FF3D]/30 font-bold text-xs rounded-xl transition-all text-center"
+              >
+                ⚡ Quick Demo Sign In (Aritra - Player)
+              </button>
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setMode('organizer')}
+                  className="text-[11px] text-[#7B5CFF] hover:underline font-bold"
+                >
+                  Organizer Login (DEMO Accounts) →
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 pt-1 border-t border-[#262640]">
+              <span className="text-[10px] text-[#A7A7C0] uppercase font-bold block text-center">
+                One-Click Demo Roles
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDemoOrganizerLogin(false)}
+                  className="p-2 bg-[#1B1B2B] hover:bg-[#262640] text-white border border-[#C8FF3D]/40 rounded-xl text-left"
+                >
+                  <span className="text-xs font-bold text-[#C8FF3D] block">Organizer</span>
+                  <span className="text-[9px] text-[#A7A7C0]">organizer@demo.com</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoOrganizerLogin(true)}
+                  className="p-2 bg-[#1B1B2B] hover:bg-[#262640] text-white border border-[#7B5CFF]/40 rounded-xl text-left"
+                >
+                  <span className="text-xs font-bold text-[#7B5CFF] block">Director (Admin)</span>
+                  <span className="text-[9px] text-[#A7A7C0]">admin@demo.com</span>
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

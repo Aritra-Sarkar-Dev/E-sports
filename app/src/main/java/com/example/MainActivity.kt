@@ -1,14 +1,10 @@
 package com.example
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,11 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -53,38 +47,39 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun FFArenaPlayerApp() {
-    val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Navigation State
+    // Navigation State (Strictly 4 tabs)
     var currentTab by remember { mutableStateOf("Home") }
 
-    // Back button handling: if not on Home, back goes to Home
-    BackHandler(enabled = currentTab != "Home") {
-        currentTab = "Home"
+    // Back button handling: if in sub screen or not on Home, back goes to Home
+    var showOrganizerConsole by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showOrganizerConsole || currentTab != "Home") {
+        if (showOrganizerConsole) {
+            showOrganizerConsole = false
+        } else {
+            currentTab = "Home"
+        }
     }
 
-    // App State
+    // App State (Zero real-money wallet)
     var profile by remember { mutableStateOf(MockData.defaultProfile) }
-    var wallet by remember { mutableStateOf(MockData.defaultWallet) }
     var coins by remember { mutableIntStateOf(540) }
-    var streakDay by remember { mutableIntStateOf(4) }
+    var streakDay by remember { mutableIntStateOf(5) }
     var hasCheckedInToday by remember { mutableStateOf(false) }
 
-    var matches by remember { mutableStateOf(MockData.matchesList) }
-    var transactions by remember { mutableStateOf(MockData.transactionsList) }
+    val matches = TournamentService.matches
     var missions by remember { mutableStateOf(MockData.missionsList) }
-    val storeItems = remember { MockData.storeList }
-    var notifications by remember { mutableStateOf(MockData.notificationsList) }
+    var storeItems by remember { mutableStateOf(MockData.storeList) }
+    val notifications = TournamentService.notifications
 
     // Modals state
     var selectedDetailMatch by remember { mutableStateOf<EsportsMatch?>(null) }
     var selectedJoinMatch by remember { mutableStateOf<EsportsMatch?>(null) }
     var showSpinWheel by remember { mutableStateOf(false) }
-    var showAddMoney by remember { mutableStateOf(false) }
-    var showWithdraw by remember { mutableStateOf(false) }
     var showLeaderboard by remember { mutableStateOf(false) }
     var showNotifications by remember { mutableStateOf(false) }
     var reportMatch by remember { mutableStateOf<EsportsMatch?>(null) }
@@ -122,11 +117,12 @@ fun FFArenaPlayerApp() {
             }
         },
         bottomBar = {
-            FloatingPillBottomNav(
-                currentTab = currentTab,
-                onTabSelect = { currentTab = it },
-                unreadNotifications = notifications.count { !it.isRead }
-            )
+            if (!showOrganizerConsole) {
+                FloatingPillBottomNav(
+                    currentTab = currentTab,
+                    onTabSelect = { currentTab = it }
+                )
+            }
         }
     ) { innerPadding ->
         Box(
@@ -134,113 +130,116 @@ fun FFArenaPlayerApp() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (currentTab) {
-                "Home" -> {
-                    HomeScreen(
-                        profile = profile,
-                        wallet = wallet,
-                        coins = coins,
-                        matches = matches,
-                        leaderboard = MockData.leaderboardList,
-                        unreadCount = notifications.count { !it.isRead },
-                        onOpenNotifications = { showNotifications = true },
-                        onOpenWallet = { currentTab = "Rewards" },
-                        onOpenSpinWheel = { showSpinWheel = true },
-                        onDailyCheckIn = {
-                            if (!hasCheckedInToday) {
-                                hasCheckedInToday = true
-                                coins += 40
-                                showToast("Daily Check-In: +40 Coins added!")
+            if (showOrganizerConsole) {
+                OrganizerConsoleScreen(
+                    onClose = { showOrganizerConsole = false },
+                    onShowToast = { showToast(it) }
+                )
+            } else {
+                when (currentTab) {
+                    "Home" -> {
+                        HomeScreen(
+                            profile = profile,
+                            coins = coins,
+                            matches = matches,
+                            leaderboard = MockData.leaderboardList,
+                            unreadCount = notifications.count { !it.isRead },
+                            onOpenNotifications = { showNotifications = true },
+                            onOpenRewards = { currentTab = "Rewards" },
+                            onOpenSpinWheel = { showSpinWheel = true },
+                            onDailyCheckIn = {
+                                if (!hasCheckedInToday) {
+                                    hasCheckedInToday = true
+                                    coins += 50
+                                    showToast("Daily Streak Claimed: +50 Loyalty Coins!")
+                                }
+                            },
+                            hasCheckedInToday = hasCheckedInToday,
+                            onOpenMatchDetail = { selectedDetailMatch = it },
+                            onOpenLeaderboard = { showLeaderboard = true },
+                            onSelectModeFilter = {
+                                currentTab = "Matches"
                             }
-                        },
-                        hasCheckedInToday = hasCheckedInToday,
-                        onOpenMatchDetail = { selectedDetailMatch = it },
-                        onOpenLeaderboard = { showLeaderboard = true },
-                        onSelectModeFilter = { mode ->
-                            currentTab = "Matches"
-                        }
-                    )
-                }
+                        )
+                    }
 
-                "Matches" -> {
-                    MatchesScreen(
-                        matches = matches,
-                        onOpenMatchDetail = { selectedDetailMatch = it },
-                        onJoinMatch = { selectedJoinMatch = it },
-                        onReportMatch = { reportMatch = it }
-                    )
-                }
+                    "Matches" -> {
+                        MatchesScreen(
+                            matches = matches,
+                            onOpenMatchDetail = { selectedDetailMatch = it },
+                            onJoinMatch = { selectedJoinMatch = it },
+                            onReportMatch = { reportMatch = it }
+                        )
+                    }
 
-                "Wallet" -> {
-                    WalletScreen(
-                        wallet = wallet,
-                        profile = profile,
-                        transactions = transactions,
-                        onAddMoneyClick = { showAddMoney = true },
-                        onWithdrawClick = { showWithdraw = true }
-                    )
-                }
+                    "Rewards" -> {
+                        RewardsScreen(
+                            coins = coins,
+                            streakDay = streakDay,
+                            hasCheckedInToday = hasCheckedInToday,
+                            missions = missions,
+                            storeItems = storeItems,
+                            onDailyCheckIn = {
+                                if (!hasCheckedInToday) {
+                                    hasCheckedInToday = true
+                                    coins += 50
+                                    showToast("Day $streakDay claimed! +50 Loyalty Coins.")
+                                }
+                            },
+                            onSpinWheelClick = { showSpinWheel = true },
+                            onClaimMission = { mission ->
+                                missions = missions.map {
+                                    if (it.id == mission.id) it.copy(isClaimed = true) else it
+                                }
+                                coins += mission.rewardCoins
+                                showToast("Quest Complete: +${mission.rewardCoins} Coins!")
+                            },
+                            onRedeemStoreItem = { item ->
+                                if (coins >= item.coins) {
+                                    coins -= item.coins
+                                    storeItems = storeItems.map {
+                                        if (it.id == item.id) it.copy(isPurchased = true) else it
+                                    }
+                                    showToast("Redeemed ${item.title}!")
+                                } else {
+                                    showToast("Need ${item.coins - coins} more coins to redeem.")
+                                }
+                            }
+                        )
+                    }
 
-                "Rewards" -> {
-                    RewardsScreen(
-                        coins = coins,
-                        streakDay = streakDay,
-                        hasCheckedInToday = hasCheckedInToday,
-                        missions = missions,
-                        storeItems = storeItems,
-                        onDailyCheckIn = {
-                            if (!hasCheckedInToday) {
-                                hasCheckedInToday = true
-                                coins += 40
-                                showToast("Day $streakDay claimed! +40 Coins.")
+                    "Profile" -> {
+                        ProfileScreen(
+                            profile = profile,
+                            onCopyUid = {
+                                clipboardManager.setText(AnnotatedString(profile.ffUid))
+                                showToast("Free Fire UID copied to clipboard!")
+                            },
+                            onCopyReferral = {
+                                clipboardManager.setText(AnnotatedString(profile.referralCode))
+                                showToast("Code copied: ${profile.referralCode}. Both of you get 100 bonus coins!")
+                            },
+                            onOpenEditProfile = {
+                                showToast("Player Identity: ${profile.ign} (UID ${profile.ffUid})")
+                            },
+                            onOpenOrganizerConsole = {
+                                showOrganizerConsole = true
+                            },
+                            onToggleRole = {
+                                val nextRole = if (profile.role == "organizer") "player" else "organizer"
+                                profile = profile.copy(role = nextRole)
+                                showToast("Demo Role Switched to: ${nextRole.uppercase()}")
+                            },
+                            onOpenSettings = { setting ->
+                                when (setting) {
+                                    "fairplay" -> showToast("Fair Play: Zero cheats, telemetry radar active.")
+                                    "support" -> showToast("Referee Support: @FFArenaSupportBot")
+                                    "terms" -> showToast("18+ Only • Free entry sponsor competitions")
+                                    else -> showToast("Opened $setting")
+                                }
                             }
-                        },
-                        onSpinWheelClick = { showSpinWheel = true },
-                        onClaimMission = { mission ->
-                            missions = missions.map {
-                                if (it.id == mission.id) it.copy(isClaimed = true) else it
-                            }
-                            coins += mission.rewardCoins
-                            showToast("Mission Claimed: +${mission.rewardCoins} Coins!")
-                        },
-                        onRedeemStoreItem = { item ->
-                            if (coins >= item.coins) {
-                                coins -= item.coins
-                                showToast("Redeemed ${item.title}!")
-                            } else {
-                                showToast("Need ${item.coins - coins} more coins to redeem.")
-                            }
-                        }
-                    )
-                }
-
-                "Profile" -> {
-                    ProfileScreen(
-                        profile = profile,
-                        onCopyUid = {
-                            clipboardManager.setText(AnnotatedString(profile.ffUid))
-                            showToast("Free Fire UID copied to clipboard!")
-                        },
-                        onCopyReferral = {
-                            clipboardManager.setText(AnnotatedString(profile.referralCode))
-                            showToast("Referral Code copied: ${profile.referralCode}")
-                        },
-                        onOpenKyc = {
-                            showToast("KYC Status: Verified with UPI ${profile.linkedUpi}")
-                        },
-                        onOpenEditProfile = {
-                            showToast("Edit Gamer Profile opened")
-                        },
-                        onOpenSettings = { setting ->
-                            when (setting) {
-                                "notifications" -> showNotifications = true
-                                "support" -> showToast("Telegram Gamer Support: @FFArenaSupportBot")
-                                "terms" -> showToast("18+ Only • Fair Play Certified")
-                                "logout" -> showToast("Logged out of player session")
-                                else -> showToast("Opened $setting")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -250,14 +249,13 @@ fun FFArenaPlayerApp() {
     selectedDetailMatch?.let { match ->
         MatchDetailModal(
             match = match,
-            userWallet = wallet,
             onDismiss = { selectedDetailMatch = null },
             onJoinClick = {
                 selectedJoinMatch = match
             },
             onCopyRoomCredentials = {
                 if (match.roomId != null) {
-                    clipboardManager.setText(AnnotatedString("Room: ${match.roomId} Pass: ${match.roomPass}"))
+                    clipboardManager.setText(AnnotatedString("Room: ${match.roomId} Pass: ${match.roomPass ?: "ffpro"}"))
                     showToast("Room ID & Pass copied!")
                 }
             }
@@ -267,42 +265,23 @@ fun FFArenaPlayerApp() {
     selectedJoinMatch?.let { match ->
         JoinMatchModal(
             match = match,
-            wallet = wallet,
             userProfile = profile,
             onDismiss = { selectedJoinMatch = null },
             onConfirmJoin = { ign, teammates ->
-                // Deduct entry fee
-                wallet = wallet.copy(
-                    deposit = (wallet.deposit - match.entryFee).coerceAtLeast(0)
-                )
-                // Mark match as joined
-                matches = matches.map {
-                    if (it.id == match.id) {
-                        it.copy(
-                            isJoined = true,
-                            joinedSlots = it.joinedSlots + 1,
-                            roomId = "772901",
-                            roomPass = "booyah99",
-                            isRoomRevealed = true
-                        )
-                    } else it
-                }
-                // Add transaction record
-                transactions = listOf(
-                    TransactionRecord(
-                        id = "tx_${System.currentTimeMillis()}",
-                        title = "Entry Fee: ${match.title}",
-                        type = "entry_fee",
-                        amount = match.entryFee,
-                        timeText = "Just now",
-                        isPositive = false
+                TournamentService.addRegistration(match.id, ign, profile.ffUid)
+                val idx = TournamentService.matches.indexOfFirst { it.id == match.id }
+                if (idx != -1) {
+                    val old = TournamentService.matches[idx]
+                    TournamentService.matches[idx] = old.copy(
+                        isJoined = true,
+                        joinedSlots = (old.joinedSlots + 1).coerceAtMost(old.maxSlots),
+                        roomId = old.roomId ?: "884910",
+                        roomPass = old.roomPass ?: "ffpro99",
+                        isRoomRevealed = true
                     )
-                ) + transactions
-
-                showToast("🎉 Successfully Registered for ${match.title}!")
-            },
-            onAddMoney = {
-                showAddMoney = true
+                }
+                coins += 20
+                showToast("🎉 Registered for ${match.title}! +20 Loyalty Coins.")
             }
         )
     }
@@ -312,49 +291,7 @@ fun FFArenaPlayerApp() {
             onDismiss = { showSpinWheel = false },
             onSpinWin = { prizeCoins ->
                 coins += prizeCoins
-                showToast("🎉 Won +$prizeCoins Coins in Lucky Spin!")
-            }
-        )
-    }
-
-    if (showAddMoney) {
-        AddMoneyModal(
-            onDismiss = { showAddMoney = false },
-            onConfirmAdd = { amount ->
-                wallet = wallet.copy(deposit = wallet.deposit + amount)
-                transactions = listOf(
-                    TransactionRecord(
-                        id = "tx_${System.currentTimeMillis()}",
-                        title = "UPI Deposit (PhonePe)",
-                        type = "deposit",
-                        amount = amount,
-                        timeText = "Just now",
-                        isPositive = true
-                    )
-                ) + transactions
-                showToast("✓ Added ₹$amount to deposit wallet!")
-            }
-        )
-    }
-
-    if (showWithdraw) {
-        WithdrawModal(
-            currentWinnings = wallet.winnings,
-            linkedUpi = profile.linkedUpi,
-            onDismiss = { showWithdraw = false },
-            onConfirmWithdraw = { amount, upi ->
-                wallet = wallet.copy(winnings = wallet.winnings - amount)
-                transactions = listOf(
-                    TransactionRecord(
-                        id = "tx_${System.currentTimeMillis()}",
-                        title = "Withdrawal to $upi",
-                        type = "withdrawal",
-                        amount = amount,
-                        timeText = "Processing (60s)",
-                        isPositive = false
-                    )
-                ) + transactions
-                showToast("⚡ ₹$amount withdrawal initiated to $upi!")
+                showToast("🎉 Won +$prizeCoins Coins in Daily Spin!")
             }
         )
     }
@@ -371,7 +308,9 @@ fun FFArenaPlayerApp() {
             notifications = notifications,
             onDismiss = { showNotifications = false },
             onMarkAllRead = {
-                notifications = notifications.map { it.copy(isRead = true) }
+                val updated = notifications.map { it.copy(isRead = true) }
+                notifications.clear()
+                notifications.addAll(updated)
                 showToast("All notifications marked as read")
             }
         )
@@ -382,21 +321,26 @@ fun FFArenaPlayerApp() {
             match = match,
             onDismiss = { reportMatch = null },
             onSubmitReport = { reason, desc ->
-                showToast("Dispute submitted to referee. Ticket ID: #DISP${System.currentTimeMillis() % 10000}")
+                showToast("Dispute ticket submitted to referee. Ticket ID: #DISP${System.currentTimeMillis() % 10000}")
             }
         )
     }
 }
 
+/**
+ * Floating Pill Bottom Navigation
+ * Strict 4 tabs: Home, Matches, Rewards, Profile
+ * Active tab: lime pill with label
+ * Inactive tabs: icon only
+ */
 @Composable
 fun FloatingPillBottomNav(
     currentTab: String,
-    onTabSelect: (String) -> Unit,
-    unreadNotifications: Int
+    onTabSelect: (String) -> Unit
 ) {
     val items = listOf(
         NavigationItem("Home", Icons.Default.Home),
-        NavigationItem("Matches", Icons.Default.SportsEsports),
+        NavigationItem("Matches", Icons.Default.EmojiEvents),
         NavigationItem("Rewards", Icons.Default.CardGiftcard),
         NavigationItem("Profile", Icons.Default.Person)
     )
@@ -404,25 +348,19 @@ fun FloatingPillBottomNav(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(32.dp), spotColor = NeonLime.copy(alpha = 0.4f))
-                .clip(RoundedCornerShape(32.dp))
-                .border(
-                    1.dp,
-                    Brush.horizontalGradient(
-                        listOf(NeonLime.copy(alpha = 0.4f), ElectricViolet.copy(alpha = 0.4f), CardBorder)
-                    ),
-                    RoundedCornerShape(32.dp)
-                )
+                .height(58.dp)
+                .shadow(elevation = 20.dp, shape = RoundedCornerShape(29.dp), spotColor = NeonLime.copy(alpha = 0.35f))
+                .clip(RoundedCornerShape(29.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(29.dp))
                 .testTag("floating_bottom_nav"),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xEE14141F))
+            shape = RoundedCornerShape(29.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xF014141F))
         ) {
             Row(
                 modifier = Modifier
@@ -436,45 +374,34 @@ fun FloatingPillBottomNav(
 
                     Box(
                         modifier = Modifier
-                            .weight(1f)
                             .clip(RoundedCornerShape(20.dp))
-                            .background(
-                                if (isSelected) NeonLime.copy(alpha = 0.15f) else Color.Transparent
-                            )
+                            .background(if (isSelected) NeonLime else Color.Transparent)
                             .clickable { onTabSelect(navItem.label) }
-                            .padding(vertical = 6.dp)
+                            .padding(
+                                horizontal = if (isSelected) 16.dp else 10.dp,
+                                vertical = 8.dp
+                            )
                             .testTag("tab_${navItem.label.lowercase()}"),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Box {
-                                Icon(
-                                    imageVector = navItem.icon,
-                                    contentDescription = navItem.label,
-                                    tint = if (isSelected) NeonLime else TextMuted,
-                                    modifier = Modifier.size(22.dp)
-                                )
-
-                                if (navItem.label == "Matches") {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .align(Alignment.TopEnd)
-                                            .clip(CircleShape)
-                                            .background(LiveRed)
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = navItem.label,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) NeonLime else TextMuted
+                            Icon(
+                                imageVector = navItem.icon,
+                                contentDescription = navItem.label,
+                                tint = if (isSelected) Color.Black else TextSecondary,
+                                modifier = Modifier.size(20.dp)
                             )
+                            if (isSelected) {
+                                Text(
+                                    text = navItem.label,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.Black
+                                )
+                            }
                         }
                     }
                 }

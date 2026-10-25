@@ -5,28 +5,33 @@ import androidx.compose.ui.graphics.Color
 
 val BgDark = Color(0xFF0A0A0F)
 val CardSurface = Color(0xFF14141F)
-val CardBorder = Color(0xFF23233A)
-val ChipBg = Color(0xFF1C1C2E)
+val ElevatedSurface = Color(0xFF1B1B2B)
+val CardBorder = Color(0xFF262640)
+val ChipBg = Color(0xFF1B1B2B)
 
 val NeonLime = Color(0xFFC8FF3D)
-val FireOrange = Color(0xFFFF6A00)
 val ElectricViolet = Color(0xFF7B5CFF)
-val GoldPrize = Color(0xFFFFB300)
+val GoldCoins = Color(0xFFFFB800)
+val GoldPrize = Color(0xFFFFB800)
 val LiveRed = Color(0xFFFF4D6D)
-val TextPrimary = Color(0xFFF5F5FA)
-val TextMuted = Color(0xFF9498AE)
+val StreakOrange = Color(0xFFFF6A00)
+val FireOrange = Color(0xFFFF6A00)
+
+val TextPrimary = Color(0xFFFFFFFF)
+val TextSecondary = Color(0xFFA7A7C0)
+val TextMuted = Color(0xFFA7A7C0)
 
 val FFArenaColorScheme = darkColorScheme(
     primary = NeonLime,
     onPrimary = Color.Black,
-    secondary = FireOrange,
+    secondary = ElectricViolet,
     onSecondary = Color.White,
     tertiary = ElectricViolet,
     background = BgDark,
     onBackground = TextPrimary,
     surface = CardSurface,
     onSurface = TextPrimary,
-    surfaceVariant = ChipBg,
-    onSurfaceVariant = TextMuted,
+    surfaceVariant = ElevatedSurface,
+    onSurfaceVariant = TextSecondary,
     outline = CardBorder
 )

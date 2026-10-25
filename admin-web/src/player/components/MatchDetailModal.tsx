@@ -13,7 +13,10 @@ import {
   Flame,
   Award,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink,
+  Gamepad2,
+  ArrowRight
 } from 'lucide-react';
 
 interface MatchDetailModalProps {
@@ -29,7 +32,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
   onJoin,
   onCopyRoomCreds,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'prizes' | 'rules'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'prizes' | 'scoring' | 'rules'>('overview');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isWithin15Mins, setIsWithin15Mins] = useState<boolean>(false);
@@ -61,12 +64,40 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleLaunchFreeFire = () => {
+    const credText = `Room ID: ${match.roomId || ''} | Pass: ${match.roomPassword || ''}`;
+    onCopyRoomCreds(credText);
+    try {
+      window.location.href = 'freefiremax://';
+      setTimeout(() => {
+        // Fallback: try standard package or notify user
+      }, 1000);
+    } catch (e) {
+      // Ignored in browser
+    }
+  };
+
   const isFull = match.joinedSlots >= match.maxSlots;
   const isRoomUnlocked = (isWithin15Mins || match.isRoomRevealed) && !!match.roomId;
 
+  const SCORING_POINTS = [
+    { rank: '1st (Booyah)', pts: '12 pts' },
+    { rank: '2nd Place', pts: '9 pts' },
+    { rank: '3rd Place', pts: '8 pts' },
+    { rank: '4th Place', pts: '7 pts' },
+    { rank: '5th Place', pts: '6 pts' },
+    { rank: '6th Place', pts: '5 pts' },
+    { rank: '7th Place', pts: '4 pts' },
+    { rank: '8th Place', pts: '3 pts' },
+    { rank: '9th Place', pts: '2 pts' },
+    { rank: '10th Place', pts: '1 pt' },
+    { rank: '11th - 12th', pts: '0 pts' },
+    { rank: 'Each Elimination (Kill)', pts: '+1 pt' },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md p-0 sm:p-4">
-      <div className="w-full max-w-md bg-[#14141F] border border-[#262640] rounded-t-[28px] sm:rounded-[24px] overflow-hidden max-h-[90vh] flex flex-col animate-slide-up shadow-2xl">
+      <div className="w-full max-w-md bg-[#14141F] border border-[#262640] rounded-t-[28px] sm:rounded-[24px] overflow-hidden max-h-[92vh] flex flex-col animate-slide-up shadow-2xl">
         {/* Header Hero Banner */}
         <div className="relative h-44 shrink-0 overflow-hidden">
           <img
@@ -116,8 +147,8 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
         </div>
 
         {/* Tab switchers */}
-        <div className="flex border-b border-[#262640] bg-[#0A0A0F] px-3 shrink-0">
-          {(['overview', 'prizes', 'rules'] as const).map((tab) => (
+        <div className="flex border-b border-[#262640] bg-[#0A0A0F] px-2 shrink-0">
+          {(['overview', 'prizes', 'scoring', 'rules'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -133,7 +164,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
         </div>
 
         {/* Content body */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1">
+        <div className="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
           {activeTab === 'overview' && (
             <div className="space-y-4">
               {/* Prize & Entry stats row */}
@@ -143,16 +174,19 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                   <span className="text-base font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.3)]">
                     ₹{match.prizePool.toLocaleString()}
                   </span>
+                  <span className="text-[9px] text-[#7B5CFF] font-bold block mt-0.5">Sponsor-funded</span>
                 </div>
                 <div className="bg-[#1B1B2B] border border-[#262640] p-3 rounded-2xl text-center">
                   <span className="text-[10px] text-[#A7A7C0] uppercase tracking-wider block">Entry</span>
                   <span className="text-base font-black text-[#C8FF3D]">
                     FREE
                   </span>
+                  <span className="text-[9px] text-[#C8FF3D] font-bold block mt-0.5">Zero Fees</span>
                 </div>
                 <div className="bg-[#1B1B2B] border border-[#262640] p-3 rounded-2xl text-center">
                   <span className="text-[10px] text-[#A7A7C0] uppercase tracking-wider block">Elimination</span>
                   <span className="text-base font-black text-[#7B5CFF]">+10 XP</span>
+                  <span className="text-[9px] text-[#A7A7C0] font-bold block mt-0.5">per kill</span>
                 </div>
               </div>
 
@@ -187,37 +221,49 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                   </div>
 
                   {isRoomUnlocked ? (
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-[#0A0A0F] p-2.5 rounded-xl border border-[#262640] flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] text-[#A7A7C0] block">Room ID</span>
-                          <span className="font-mono font-bold text-white text-sm">{match.roomId}</span>
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-[#0A0A0F] p-2.5 rounded-xl border border-[#262640] flex items-center justify-between">
+                          <div>
+                            <span className="text-[9px] text-[#A7A7C0] block">Room ID</span>
+                            <span className="font-mono font-bold text-white text-sm">{match.roomId}</span>
+                          </div>
+                          <button
+                            onClick={() => handleCopy(match.roomId || '', 'room')}
+                            className="p-1.5 hover:bg-[#1B1B2B] rounded-lg text-[#A7A7C0] hover:text-white"
+                          >
+                            {copiedField === 'room' ? <Check className="w-3.5 h-3.5 text-[#C8FF3D]" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleCopy(match.roomId || '', 'room')}
-                          className="p-1.5 hover:bg-[#1B1B2B] rounded-lg text-[#A7A7C0] hover:text-white"
-                        >
-                          {copiedField === 'room' ? <Check className="w-3.5 h-3.5 text-[#C8FF3D]" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
+
+                        <div className="bg-[#0A0A0F] p-2.5 rounded-xl border border-[#262640] flex items-center justify-between">
+                          <div>
+                            <span className="text-[9px] text-[#A7A7C0] block">Password</span>
+                            <span className="font-mono font-bold text-[#C8FF3D] text-sm">{match.roomPassword}</span>
+                          </div>
+                          <button
+                            onClick={() => handleCopy(match.roomPassword || '', 'pass')}
+                            className="p-1.5 hover:bg-[#1B1B2B] rounded-lg text-[#A7A7C0] hover:text-white"
+                          >
+                            {copiedField === 'pass' ? <Check className="w-3.5 h-3.5 text-[#C8FF3D]" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="bg-[#0A0A0F] p-2.5 rounded-xl border border-[#262640] flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] text-[#A7A7C0] block">Password</span>
-                          <span className="font-mono font-bold text-[#C8FF3D] text-sm">{match.roomPassword}</span>
-                        </div>
-                        <button
-                          onClick={() => handleCopy(match.roomPassword || '', 'pass')}
-                          className="p-1.5 hover:bg-[#1B1B2B] rounded-lg text-[#A7A7C0] hover:text-white"
-                        >
-                          {copiedField === 'pass' ? <Check className="w-3.5 h-3.5 text-[#C8FF3D]" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
+                      {/* Launch Free Fire deep link button */}
+                      <button
+                        onClick={handleLaunchFreeFire}
+                        className="w-full py-2.5 bg-[#7B5CFF] hover:bg-[#6849e6] text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(123,92,255,0.3)] transition-all active:scale-95"
+                      >
+                        <Gamepad2 className="w-4 h-4" />
+                        <span>Copy & Launch Free Fire MAX</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ) : (
                     <div className="bg-[#0A0A0F] p-3 rounded-xl border border-[#262640] flex items-center gap-2.5 text-xs text-[#A7A7C0]">
                       <Lock className="w-4 h-4 text-[#7B5CFF] shrink-0" />
-                      <span>Room ID and password will automatically unlock 15 minutes before kickoff.</span>
+                      <span>Room ID and password automatically unlock 15 minutes before kickoff.</span>
                     </div>
                   )}
                 </div>
@@ -278,6 +324,31 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                 <p className="text-[10px] text-[#A7A7C0] italic">
                   * Prizes are funded entirely by {match.sponsorName}. Free entry.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'scoring' && (
+            <div className="space-y-3">
+              <div className="bg-[#1B1B2B] border border-[#262640] p-4 rounded-2xl space-y-2.5">
+                <span className="text-xs font-black text-white flex items-center gap-1.5 uppercase tracking-wider">
+                  <Award className="w-4 h-4 text-[#C8FF3D]" /> Official Free Fire Point System
+                </span>
+                <p className="text-[11px] text-[#A7A7C0]">
+                  Standard competitive scoring matrix based on final lobby placement and kills:
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  {SCORING_POINTS.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-[#0A0A0F] border border-[#262640] rounded-xl flex items-center justify-between"
+                    >
+                      <span className="text-[10px] text-[#A7A7C0]">{item.rank}</span>
+                      <span className="text-xs font-black text-white">{item.pts}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
