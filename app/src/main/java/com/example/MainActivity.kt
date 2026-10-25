@@ -144,7 +144,7 @@ fun FFArenaPlayerApp() {
                         leaderboard = MockData.leaderboardList,
                         unreadCount = notifications.count { !it.isRead },
                         onOpenNotifications = { showNotifications = true },
-                        onOpenWallet = { currentTab = "Wallet" },
+                        onOpenWallet = { currentTab = "Rewards" },
                         onOpenSpinWheel = { showSpinWheel = true },
                         onDailyCheckIn = {
                             if (!hasCheckedInToday) {
@@ -397,7 +397,6 @@ fun FloatingPillBottomNav(
     val items = listOf(
         NavigationItem("Home", Icons.Default.Home),
         NavigationItem("Matches", Icons.Default.SportsEsports),
-        NavigationItem("Wallet", Icons.Default.AccountBalanceWallet),
         NavigationItem("Rewards", Icons.Default.CardGiftcard),
         NavigationItem("Profile", Icons.Default.Person)
     )

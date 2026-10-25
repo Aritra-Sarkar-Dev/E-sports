@@ -165,4 +165,61 @@ export class CoinService {
 
     return item;
   }
+
+  /**
+   * Player Coin Operations (Earn-only, non-cash loyalty currency)
+   */
+  static getPlayerBalance(): number {
+    return getStored<number>('ff_arena_player_coin_balance', 540);
+  }
+
+  static getPlayerLedger(): any[] {
+    return getStored<any[]>('ff_arena_player_coin_ledger', [
+      { id: 'cl_1', amount: 100, type: 'welcome_bonus', reason: 'Welcome bonus for joining FF Arena', date: '3 days ago' },
+      { id: 'cl_2', amount: 50, type: 'daily_checkin', reason: 'Day 1 Login Streak', date: '2 days ago' },
+      { id: 'cl_3', amount: 100, type: 'referral', reason: 'Friend referral bonus (both get 100 coins)', date: 'Yesterday' },
+      { id: 'cl_4', amount: 200, type: 'tournament_join', reason: 'Free Entry tournament participation reward', date: 'Yesterday' },
+      { id: 'cl_5', amount: 50, type: 'mission', reason: 'Completed Daily Elimination Quest', date: 'Today' }
+    ]);
+  }
+
+  static earnPlayerCoins(amount: number, type: string, reason: string): { newBalance: number } {
+    const current = this.getPlayerBalance();
+    const newBalance = current + amount;
+    setStored('ff_arena_player_coin_balance', newBalance);
+
+    const ledger = this.getPlayerLedger();
+    ledger.unshift({
+      id: `cl_${Date.now()}`,
+      amount,
+      type,
+      reason,
+      date: 'Just now'
+    });
+    setStored('ff_arena_player_coin_ledger', ledger);
+
+    return { newBalance };
+  }
+
+  static spendPlayerCoins(amount: number, reason: string): { newBalance: number } {
+    const current = this.getPlayerBalance();
+    if (current < amount) {
+      throw new Error('Insufficient coins to complete redemption.');
+    }
+    const newBalance = current - amount;
+    setStored('ff_arena_player_coin_balance', newBalance);
+
+    const ledger = this.getPlayerLedger();
+    ledger.unshift({
+      id: `cl_${Date.now()}`,
+      amount: -amount,
+      type: 'cosmetic_purchase',
+      reason,
+      date: 'Just now'
+    });
+    setStored('ff_arena_player_coin_ledger', ledger);
+
+    return { newBalance };
+  }
 }
+

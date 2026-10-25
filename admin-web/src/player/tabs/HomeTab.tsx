@@ -1,37 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import {
-  PlayerProfile,
-  WalletBalance,
-  PlayerMatch,
-  LeaderboardPlayer
-} from '../types';
+import { PlayerProfile, PlayerMatch, LeaderboardPlayer } from '../types';
 import {
   Bell,
   Coins,
-  Wallet,
   CalendarCheck,
   RotateCw,
-  UserPlus,
-  Headphones,
+  Users,
+  Trophy,
   Flame,
   Radio,
   Clock,
   ChevronRight,
-  Trophy,
-  Crown
+  ShieldCheck,
+  Sparkles,
+  Zap,
+  Search
 } from 'lucide-react';
 
 interface HomeTabProps {
   profile: PlayerProfile;
-  wallet: WalletBalance;
   coins: number;
   matches: PlayerMatch[];
   leaderboard: LeaderboardPlayer[];
   unreadNotifsCount: number;
   onOpenNotifications: () => void;
-  onOpenWallet: () => void;
+  onOpenRewards: () => void;
   onOpenSpinWheel: () => void;
   onOpenLeaderboard: () => void;
+  onOpenSquad: () => void;
   onOpenMatchDetail: (match: PlayerMatch) => void;
   onSelectCategory: (cat: string) => void;
   onDailyCheckIn: () => void;
@@ -44,40 +40,40 @@ const CAROUSEL_BANNERS = [
   {
     id: 1,
     title: 'CYBERFRAY 2077 GRAND FINALS',
-    subtitle: '₹50,000 Sponsor Pool • ASUS ROG Sponsored',
-    tag: 'MEGA TOURNAMENT',
-    bg: 'from-[#FF6A00] via-[#E040FB] to-[#3A24A8]',
+    sponsor: 'ASUS ROG Sponsored',
+    prizeLabel: '₹50,000 SPONSOR POOL',
+    tag: 'MEGA SPONSOR CUP',
     image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 2,
-    title: 'FREE ENTRY SUNDAY ROOKIE CUP',
-    subtitle: 'Zero Entry Fee • Win ₹1,500 Cash & Level-Up Coins',
+    title: 'SUNDAY ROOKIE SHOWDOWN',
+    sponsor: 'Red Bull Esports',
+    prizeLabel: '₹5,000 SPONSOR POOL',
     tag: '100% FREE ENTRY',
-    bg: 'from-[#00E5FF] via-[#7B5CFF] to-[#14141F]',
     image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 3,
-    title: 'BOOYAH WARRIORS VIP PASS',
-    subtitle: 'Unlock Exclusive Neon Frames & 2x Elimination Rewards',
-    tag: 'SEASON 14 LIVE',
-    bg: 'from-[#C8FF3D] via-[#00E676] to-[#0A0A0F]',
-    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80',
+    title: 'CLASH SQUAD 4v4 INVITATIONAL',
+    sponsor: 'Monster Energy',
+    prizeLabel: '₹12,000 SPONSOR POOL',
+    tag: 'SPONSOR TROPHY',
+    image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80',
   },
 ];
 
 export const HomeTab: React.FC<HomeTabProps> = ({
   profile,
-  wallet,
   coins,
   matches,
   leaderboard,
   unreadNotifsCount,
   onOpenNotifications,
-  onOpenWallet,
+  onOpenRewards,
   onOpenSpinWheel,
   onOpenLeaderboard,
+  onOpenSquad,
   onOpenMatchDetail,
   onSelectCategory,
   onDailyCheckIn,
@@ -87,6 +83,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 }) => {
   const [activeBanner, setActiveBanner] = useState(0);
   const [selectedGameMode, setSelectedGameMode] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Auto-sliding banner
   useEffect(() => {
@@ -97,21 +94,22 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   }, []);
 
   const liveMatches = matches.filter((m) => m.status === 'Live');
-  const startingSoon = matches.filter((m) => m.status === 'Upcoming').slice(0, 4);
+  const upcomingMatches = matches.filter((m) => m.status === 'Upcoming');
+  const myJoinedMatch = matches.find((m) => m.userJoined && m.status !== 'Completed');
+  const beginnerMatches = matches.filter((m) => m.division === 'Rookie');
 
   const gameModes = [
     { id: 'All', label: 'All Modes' },
-    { id: 'Battle Royale', label: 'Battle Royale' },
-    { id: 'Clash Squad', label: 'Clash Squad' },
-    { id: 'Lone Wolf', label: 'Lone Wolf (1v1)' },
-    { id: 'Free Entry', label: 'Free Entry' },
-    { id: 'Pro Cash', label: 'Pro Cash' },
+    { id: 'Squad', label: 'Squad (4v4)' },
+    { id: 'Solo', label: 'Solo Cup' },
+    { id: 'Duo', label: 'Duo' },
+    { id: 'Sponsor Cups', label: 'Sponsor Cups' },
   ];
 
   return (
-    <div className="space-y-5 pb-8 animate-fade-in">
+    <div className="space-y-4 pb-8 animate-fade-in">
       {/* Sticky Top Header */}
-      <div className="sticky top-0 z-30 bg-[#0A0A0F]/90 backdrop-blur-md px-4 py-3 border-b border-[#23233A]/60 flex items-center justify-between">
+      <div className="sticky top-0 z-30 bg-[#0A0A0F]/90 backdrop-blur-md px-4 py-3 border-b border-[#262640] flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <img
@@ -119,49 +117,42 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               alt={profile.inGameName}
               className="w-10 h-10 rounded-full object-cover border-2 border-[#C8FF3D] shadow-[0_0_10px_rgba(200,255,61,0.3)]"
             />
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#FF6A00] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#0A0A0F]">
+            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#7B5CFF] text-white text-[9px] font-black rounded-full border border-[#0A0A0F]">
               42
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-[#9498AE] uppercase tracking-wider block">
+            <span className="text-[10px] text-[#A7A7C0] uppercase tracking-wider block">
               Welcome back
             </span>
-            <h2 className="text-sm font-extrabold text-white flex items-center gap-1">
+            <h2 className="text-sm font-black text-white flex items-center gap-1">
               Hey, {profile.name.split(' ')[0]}
               <span className="text-xs">⚡</span>
             </h2>
           </div>
         </div>
 
-        {/* Chips row: Coins, Wallet, Bell */}
+        {/* Chips row: Coins ONLY + Bell (NO wallet chip) */}
         <div className="flex items-center gap-2">
           {/* Coins chip */}
           <button
-            onClick={() => {}}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1C1C2E] border border-[#FFB300]/30 rounded-full text-xs font-bold text-[#FFB300] hover:border-[#FFB300] transition-all"
+            onClick={onOpenRewards}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B1B2B] border border-[#FFB800]/40 rounded-full text-xs font-black text-[#FFB800] hover:border-[#FFB800] transition-all shadow-[0_0_10px_rgba(255,184,0,0.15)] active:scale-95"
+            title="Earned Loyalty Coins"
           >
-            <Coins className="w-3.5 h-3.5 text-[#FFB300]" />
+            <Coins className="w-3.5 h-3.5 text-[#FFB800]" />
             <span>{coins}</span>
-          </button>
-
-          {/* Wallet chip */}
-          <button
-            onClick={onOpenWallet}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1C1C2E] border border-[#C8FF3D]/30 rounded-full text-xs font-bold text-[#C8FF3D] hover:border-[#C8FF3D] transition-all shadow-[0_0_8px_rgba(200,255,61,0.15)]"
-          >
-            <Wallet className="w-3.5 h-3.5 text-[#C8FF3D]" />
-            <span>₹{wallet.total}</span>
           </button>
 
           {/* Notification bell */}
           <button
             onClick={onOpenNotifications}
-            className="relative p-2 bg-[#1C1C2E] border border-[#23233A] rounded-full text-slate-300 hover:text-white hover:border-[#7B5CFF] transition-all"
+            className="relative p-2 bg-[#1B1B2B] border border-[#262640] rounded-full text-[#A7A7C0] hover:text-white hover:border-[#7B5CFF] transition-all"
+            title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadNotifsCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF6A00] text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF4D6D] text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
                 {unreadNotifsCount}
               </span>
             )}
@@ -169,9 +160,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </div>
       </div>
 
-      <div className="px-4 space-y-5">
+      <div className="px-4 space-y-4">
         {/* Banner Carousel */}
-        <div className="relative rounded-[22px] overflow-hidden border border-[#23233A] shadow-2xl h-44">
+        <div className="relative rounded-[24px] overflow-hidden border border-[#262640] shadow-2xl h-44">
           {CAROUSEL_BANNERS.map((banner, idx) => (
             <div
               key={banner.id}
@@ -184,291 +175,372 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 alt={banner.title}
                 className="w-full h-full object-cover brightness-50"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/50 to-transparent p-4 flex flex-col justify-end">
-                <span className="self-start px-2 py-0.5 bg-[#C8FF3D] text-black font-extrabold text-[9px] rounded-full uppercase tracking-wider mb-1.5 shadow">
-                  {banner.tag}
-                </span>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/60 to-transparent p-4 flex flex-col justify-end">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider shadow">
+                    {banner.tag}
+                  </span>
+                  <span className="text-[10px] text-[#A7A7C0] font-semibold">
+                    {banner.sponsor}
+                  </span>
+                </div>
                 <h3 className="text-base font-black text-white leading-tight mb-1">
                   {banner.title}
                 </h3>
-                <p className="text-xs text-[#C8FF3D] font-medium line-clamp-1">
-                  {banner.subtitle}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.4)]">
+                    {banner.prizeLabel}
+                  </span>
+                  <span className="text-[10px] text-[#7B5CFF] font-bold">
+                    • Sponsor-funded prize
+                  </span>
+                </div>
               </div>
             </div>
           ))}
 
-          {/* Dots Indicator */}
-          <div className="absolute bottom-2.5 right-3.5 z-20 flex gap-1.5">
-            {CAROUSEL_BANNERS.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveBanner(idx)}
-                className={`h-1.5 rounded-full transition-all ${
-                  activeBanner === idx ? 'w-5 bg-[#C8FF3D]' : 'w-1.5 bg-white/40'
+          {/* Dots navigation */}
+          <div className="absolute bottom-2.5 right-4 z-20 flex gap-1">
+            {CAROUSEL_BANNERS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all ${
+                  activeBanner === i ? 'w-4 bg-[#C8FF3D]' : 'w-1 bg-white/30'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Quick Action Row */}
+        {/* Quick Action Buttons (4 grid items) */}
         <div className="grid grid-cols-4 gap-2">
-          {/* Daily check-in */}
+          {/* Daily Streak */}
           <button
             onClick={onDailyCheckIn}
-            className="flex flex-col items-center justify-center p-2.5 bg-[#14141F] border border-[#23233A] rounded-2xl hover:border-[#FFB300]/50 transition-all active:scale-95 group"
-          >
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-1.5 transition-all ${
+            className={`p-2.5 rounded-2xl border flex flex-col items-center text-center transition-all active:scale-95 ${
               hasCheckedInToday
-                ? 'bg-[#C8FF3D]/15 text-[#C8FF3D]'
-                : 'bg-[#FFB300]/15 text-[#FFB300] group-hover:scale-105'
-            }`}>
-              <CalendarCheck className="w-5 h-5" />
+                ? 'bg-[#14141F] border-[#262640] opacity-80'
+                : 'bg-[#1B1B2B] border-[#C8FF3D]/40 shadow-[0_0_12px_rgba(200,255,61,0.15)]'
+            }`}
+          >
+            <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/15 flex items-center justify-center text-[#C8FF3D] mb-1">
+              <CalendarCheck className="w-4 h-4" />
             </div>
-            <span className="text-[11px] font-bold text-white text-center leading-tight">
-              {hasCheckedInToday ? 'Streak (5)' : 'Check-in'}
-            </span>
+            <span className="text-[10px] font-bold text-white block">Streak</span>
+            <span className="text-[9px] text-[#C8FF3D] font-extrabold">{hasCheckedInToday ? 'Claimed' : '+50 Coins'}</span>
           </button>
 
-          {/* Spin Wheel */}
+          {/* Daily Spin */}
           <button
             onClick={onOpenSpinWheel}
-            className="flex flex-col items-center justify-center p-2.5 bg-[#14141F] border border-[#23233A] rounded-2xl hover:border-[#7B5CFF]/50 transition-all active:scale-95 group"
+            className="p-2.5 rounded-2xl bg-[#1B1B2B] border border-[#262640] hover:border-[#FFB800]/50 flex flex-col items-center text-center transition-all active:scale-95"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[#7B5CFF]/15 text-[#7B5CFF] flex items-center justify-center mb-1.5 group-hover:rotate-45 transition-all">
-              <RotateCw className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-[#FFB800]/15 flex items-center justify-center text-[#FFB800] mb-1">
+              <RotateCw className="w-4 h-4" />
             </div>
-            <span className="text-[11px] font-bold text-white text-center leading-tight">
-              Spin Wheel
-            </span>
+            <span className="text-[10px] font-bold text-white block">Daily Spin</span>
+            <span className="text-[9px] text-[#FFB800] font-extrabold">Free Win</span>
           </button>
 
-          {/* Invite & Earn */}
+          {/* Squad */}
           <button
-            onClick={onShareReferral}
-            className="flex flex-col items-center justify-center p-2.5 bg-[#14141F] border border-[#23233A] rounded-2xl hover:border-[#FF6A00]/50 transition-all active:scale-95 group"
+            onClick={onOpenSquad}
+            className="p-2.5 rounded-2xl bg-[#1B1B2B] border border-[#262640] hover:border-[#7B5CFF]/50 flex flex-col items-center text-center transition-all active:scale-95"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[#FF6A00]/15 text-[#FF6A00] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-all">
-              <UserPlus className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-[#7B5CFF]/15 flex items-center justify-center text-[#7B5CFF] mb-1">
+              <Users className="w-4 h-4" />
             </div>
-            <span className="text-[11px] font-bold text-white text-center leading-tight">
-              Invite & Earn
-            </span>
+            <span className="text-[10px] font-bold text-white block">My Squad</span>
+            <span className="text-[9px] text-[#7B5CFF] font-extrabold">4v4 Ready</span>
           </button>
 
-          {/* Support */}
+          {/* Leaderboard */}
           <button
-            onClick={onOpenSupport}
-            className="flex flex-col items-center justify-center p-2.5 bg-[#14141F] border border-[#23233A] rounded-2xl hover:border-[#00E5FF]/50 transition-all active:scale-95 group"
+            onClick={onOpenLeaderboard}
+            className="p-2.5 rounded-2xl bg-[#1B1B2B] border border-[#262640] hover:border-[#C8FF3D]/50 flex flex-col items-center text-center transition-all active:scale-95"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[#00E5FF]/15 text-[#00E5FF] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-all">
-              <Headphones className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/15 flex items-center justify-center text-[#C8FF3D] mb-1">
+              <Trophy className="w-4 h-4" />
             </div>
-            <span className="text-[11px] font-bold text-white text-center leading-tight">
-              24/7 Help
-            </span>
+            <span className="text-[10px] font-bold text-white block">Ranks</span>
+            <span className="text-[9px] text-[#C8FF3D] font-extrabold">Top Players</span>
           </button>
         </div>
 
-        {/* Game Mode Horizontal Chips */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-[#FF6A00]" /> Tournament Arenas
-            </span>
-          </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {gameModes.map((mode) => (
-              <button
-                key={mode.id}
-                onClick={() => {
-                  setSelectedGameMode(mode.id);
-                  onSelectCategory(mode.id);
-                }}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all border ${
-                  selectedGameMode === mode.id
-                    ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] shadow-[0_0_12px_rgba(200,255,61,0.25)]'
-                    : 'bg-[#14141F] text-[#9498AE] border-[#23233A] hover:text-white'
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Live Now Section */}
-        {liveMatches.length > 0 && (
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                </span>
-                <span className="text-xs font-black text-white uppercase tracking-wider">
-                  Live Battle Arena
+        {/* Pinned "Next Match / My Match" Card */}
+        {myJoinedMatch && (
+          <div
+            onClick={() => onOpenMatchDetail(myJoinedMatch)}
+            className="bg-gradient-to-r from-[#17113D] via-[#1B1B2B] to-[#14141F] border-2 border-[#C8FF3D] rounded-2xl p-3.5 shadow-[0_0_20px_rgba(200,255,61,0.2)] cursor-pointer hover:border-[#b5f02c] transition-all group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#C8FF3D] animate-ping" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#C8FF3D]">
+                  REGISTERED MATCH KICK-OFF
                 </span>
               </div>
-              <span className="text-[11px] text-[#9498AE] flex items-center gap-1">
-                <Radio className="w-3.5 h-3.5 text-red-500" /> 1.4k Spectators
+              <span className="text-[10px] text-[#A7A7C0] flex items-center gap-1">
+                <Clock className="w-3 h-3 text-[#C8FF3D]" />
+                {myJoinedMatch.status === 'Live' ? 'LIVE NOW' : 'Starting Soon'}
               </span>
             </div>
 
-            {liveMatches.map((m) => (
-              <div
-                key={m.id}
-                onClick={() => onOpenMatchDetail(m)}
-                className="relative rounded-2xl overflow-hidden border border-red-500/40 bg-[#14141F] p-4 cursor-pointer hover:border-red-500 transition-all shadow-[0_0_20px_rgba(239,68,68,0.15)] group"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span className="text-[10px] px-2 py-0.5 bg-red-500 text-white font-extrabold rounded-full uppercase tracking-wider inline-block mb-1">
-                      LIVE MATCH
-                    </span>
-                    <h4 className="text-sm font-bold text-white group-hover:text-[#C8FF3D] transition-colors">
-                      {m.title}
-                    </h4>
-                    <p className="text-[11px] text-[#9498AE] mt-0.5">
-                      {m.mode} • Map: {m.map} • Prize: <strong className="text-[#FFB300]">₹{m.prizePool}</strong>
-                    </p>
-                  </div>
-
-                  <button className="px-3 py-1.5 bg-[#FF6A00] text-white text-xs font-extrabold rounded-xl shadow-[0_0_12px_rgba(255,106,0,0.4)] flex items-center gap-1">
-                    Watch
-                  </button>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-[#0A0A0F] h-1.5 rounded-full overflow-hidden mt-3">
-                  <div className="h-full bg-gradient-to-r from-[#FF6A00] to-red-500 w-[95%]" />
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-black text-white group-hover:text-[#C8FF3D] transition-colors">
+                  {myJoinedMatch.title}
+                </h4>
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-[#A7A7C0]">
+                  <span>{myJoinedMatch.mode}</span>
+                  <span>•</span>
+                  <span>{myJoinedMatch.map}</span>
+                  <span>•</span>
+                  <span className="text-white font-bold">
+                    ₹{myJoinedMatch.prizePool.toLocaleString()} Pool
+                  </span>
                 </div>
               </div>
-            ))}
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-black text-[#C8FF3D] bg-[#C8FF3D]/15 px-2.5 py-1 rounded-xl border border-[#C8FF3D]/30">
+                  View Room
+                </span>
+                <ChevronRight className="w-4 h-4 text-[#C8FF3D] group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Starting Soon Section */}
-        <div className="space-y-3">
+        {/* Game Mode Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {gameModes.map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => {
+                setSelectedGameMode(mode.id);
+                onSelectCategory(mode.id);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                selectedGameMode === mode.id
+                  ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] shadow-[0_0_12px_rgba(200,255,61,0.25)]'
+                  : 'bg-[#14141F] text-[#A7A7C0] border-[#262640] hover:text-white'
+              }`}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Section 1: LIVE NOW (Urgent/Live) */}
+        {liveMatches.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#FF4D6D] animate-ping" />
+                <span className="text-[#FF4D6D]">LIVE NOW</span>
+              </span>
+              <button
+                onClick={() => onSelectCategory('Live')}
+                className="text-[11px] text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
+              >
+                View all <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {liveMatches.map((m) => (
+                <div
+                  key={m.id}
+                  onClick={() => onOpenMatchDetail(m)}
+                  className="bg-[#14141F] border border-[#262640] border-l-4 border-l-[#FF4D6D] rounded-2xl p-3 flex items-center justify-between hover:border-[#FF4D6D]/60 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={m.mapImage}
+                      alt={m.map}
+                      className="w-12 h-12 rounded-xl object-cover"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.2 bg-[#FF4D6D]/20 text-[#FF4D6D] text-[9px] font-black rounded-full uppercase">
+                          LIVE
+                        </span>
+                        <h4 className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors truncate max-w-[170px]">
+                          {m.title}
+                        </h4>
+                      </div>
+                      <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+                        {m.mode} • {m.map} • {m.sponsorName}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-black text-white block">
+                      ₹{m.prizePool.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-[#C8FF3D] font-bold">
+                      FREE ENTRY
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section 2: STARTING SOON */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#C8FF3D]" /> Starting Soon
+            <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-[#C8FF3D]" /> Starting Soon
             </span>
             <button
-              onClick={() => onSelectCategory('All')}
-              className="text-[11px] font-bold text-[#C8FF3D] flex items-center gap-0.5 hover:underline"
+              onClick={() => onSelectCategory('Upcoming')}
+              className="text-[11px] text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
             >
-              See All <ChevronRight className="w-3.5 h-3.5" />
+              See all <ChevronRight className="w-3 h-3" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {startingSoon.map((m) => (
-              <div
-                key={m.id}
-                onClick={() => onOpenMatchDetail(m)}
-                className="bg-[#14141F] border border-[#23233A] rounded-[20px] p-3.5 flex flex-col gap-2.5 cursor-pointer hover:border-[#C8FF3D]/50 transition-all active:scale-[0.99] group shadow-lg"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 bg-[#C8FF3D]/15 text-[#C8FF3D] text-[10px] font-extrabold rounded-md uppercase">
-                        {m.mode}
+          <div className="space-y-2">
+            {upcomingMatches.slice(0, 3).map((m) => {
+              const slotsPercent = Math.min(100, (m.joinedSlots / m.maxSlots) * 100);
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => onOpenMatchDetail(m)}
+                  className="bg-[#14141F] border border-[#262640] border-l-4 border-l-[#C8FF3D] rounded-2xl p-3.5 space-y-2.5 hover:border-[#C8FF3D]/50 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider">
+                          FREE ENTRY
+                        </span>
+                        <span className="text-[10px] text-[#7B5CFF] font-bold">
+                          {m.sponsorName}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors leading-snug">
+                        {m.title}
+                      </h4>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-sm font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.3)] block">
+                        ₹{m.prizePool.toLocaleString()}
                       </span>
-                      <span className="text-[10px] text-[#9498AE]">
-                        Map: <strong className="text-white">{m.map}</strong>
+                      <span className="text-[9px] text-[#A7A7C0]">
+                        Sponsor Pool
                       </span>
                     </div>
-                    <h4 className="text-xs font-bold text-white group-hover:text-[#C8FF3D] transition-colors line-clamp-1">
-                      {m.title}
-                    </h4>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-[#9498AE] block">Prize Pool</span>
-                    <span className="text-xs font-extrabold text-[#FFB300]">₹{m.prizePool}</span>
+                  {/* Meter & Join Row */}
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-[#262640]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-[#0A0A0F] h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#7B5CFF] to-[#C8FF3D]"
+                          style={{ width: `${slotsPercent}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-[#A7A7C0]">
+                        {m.joinedSlots}/{m.maxSlots} Slots
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[11px] font-black text-[#C8FF3D]">
+                      <span>{m.userJoined ? 'Registered' : 'Join Free'}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
                   </div>
                 </div>
-
-                {/* Bottom stats row */}
-                <div className="flex items-center justify-between pt-2 border-t border-[#23233A]/60 text-xs">
-                  <div className="flex items-center gap-3 text-[11px] text-[#9498AE]">
-                    <span>
-                      Entry: <strong className={m.entryFee === 0 ? 'text-[#C8FF3D]' : 'text-white'}>
-                        {m.entryFee === 0 ? 'FREE' : `₹${m.entryFee}`}
-                      </strong>
-                    </span>
-                    <span>•</span>
-                    <span>Kill: <strong className="text-[#FF6A00]">₹{m.perKillPrize}</strong></span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#9498AE]">
-                      {m.joinedSlots}/{m.maxSlots} Slots
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenMatchDetail(m);
-                      }}
-                      className="px-3 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black text-[11px] font-black rounded-lg shadow-[0_0_10px_rgba(200,255,61,0.2)]"
-                    >
-                      {m.userJoined ? 'View Room' : 'Join'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Mini Leaderboard Strip */}
-        <div className="bg-gradient-to-r from-[#17113D] via-[#1C1C2E] to-[#14141F] border border-[#7B5CFF]/40 rounded-[22px] p-4 shadow-xl">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#FFB300]/20 flex items-center justify-center text-[#FFB300]">
-                <Crown className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-extrabold text-white">Top Champions This Week</span>
+        {/* Section 3: BEGINNER FRIENDLY (Rookie Division) */}
+        {beginnerMatches.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#7B5CFF]" /> Beginner Friendly
+              </span>
+              <span className="text-[10px] text-[#7B5CFF] font-bold">All Ranks Welcome</span>
             </div>
-            <button
-              onClick={onOpenLeaderboard}
-              className="text-[11px] font-bold text-[#C8FF3D] flex items-center gap-0.5 hover:underline"
-            >
-              Full Board <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+
+            <div className="space-y-2">
+              {beginnerMatches.slice(0, 2).map((m) => (
+                <div
+                  key={m.id}
+                  onClick={() => onOpenMatchDetail(m)}
+                  className="bg-[#14141F] border border-[#262640] border-l-4 border-l-[#7B5CFF] rounded-2xl p-3 flex items-center justify-between hover:border-[#7B5CFF]/60 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={m.mapImage}
+                      alt={m.map}
+                      className="w-11 h-11 rounded-xl object-cover"
+                    />
+                    <div>
+                      <h4 className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors truncate max-w-[170px]">
+                        {m.title}
+                      </h4>
+                      <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+                        {m.mode} • {m.map} • +10 XP per kill
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-black text-white block">
+                      ₹{m.prizePool.toLocaleString()}
+                    </span>
+                    <span className="text-[9px] text-[#C8FF3D] font-extrabold uppercase">
+                      FREE ENTRY
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Referral Card (Coins only, no cash bonus) */}
+        <div className="bg-gradient-to-r from-[#17113D] via-[#1B1B2B] to-[#14141F] border border-[#7B5CFF]/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div>
+            <span className="text-[10px] text-[#C8FF3D] font-extrabold uppercase tracking-wider block">
+              Referral Rewards
+            </span>
+            <div className="text-xs font-black text-white mt-0.5">
+              Invite Friends: both of you get 100 bonus coins
+            </div>
+            <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+              Code: <strong className="font-mono text-[#FFB800]">{profile.referralCode}</strong>
+            </span>
           </div>
 
-          <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-1">
-            {leaderboard.slice(0, 3).map((player, idx) => (
-              <div
-                key={player.rank}
-                className="flex items-center gap-2 p-2 bg-[#0A0A0F]/60 rounded-xl border border-white/5 flex-1 min-w-[105px]"
-              >
-                <div className="relative shrink-0">
-                  <img
-                    src={player.avatar}
-                    alt={player.inGameName}
-                    className="w-8 h-8 rounded-full object-cover border border-[#FFB300]"
-                  />
-                  <span className={`absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full text-[9px] font-black flex items-center justify-center ${
-                    idx === 0 ? 'bg-[#FFB300] text-black' : idx === 1 ? 'bg-slate-300 text-black' : 'bg-[#CD7F32] text-white'
-                  }`}>
-                    {idx + 1}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold text-white truncate block">
-                    {player.inGameName}
-                  </span>
-                  <span className="text-[10px] font-extrabold text-[#FFB300] block">
-                    ₹{player.earnings}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <button
+            onClick={onShareReferral}
+            className="px-3 py-2 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow active:scale-95 transition-all shrink-0 ml-2"
+          >
+            Copy Code
+          </button>
+        </div>
+
+        {/* Fair Play & Trust Subtitle */}
+        <div className="p-3 bg-[#0A0A0F] border border-[#262640] rounded-2xl text-center space-y-1">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white">
+            <ShieldCheck className="w-4 h-4 text-[#C8FF3D]" />
+            <span>Fair Play Guarantee</span>
           </div>
+          <p className="text-[10px] text-[#A7A7C0]">
+            Free entry. Prizes are sponsor-funded. Anti-cheat automated telemetry active on all custom rooms.
+          </p>
         </div>
       </div>
     </div>

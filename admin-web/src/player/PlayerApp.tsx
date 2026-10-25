@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PlayerProfile,
   PlayerMatch,
-  WalletBalance,
-  WalletTransaction,
   Mission,
   RewardStoreItem,
   LeaderboardPlayer,
@@ -11,10 +9,8 @@ import {
 } from './types';
 import {
   INITIAL_PLAYER_PROFILE,
-  INITIAL_WALLET,
   INITIAL_COIN_BALANCE,
   INITIAL_MATCHES,
-  INITIAL_TRANSACTIONS,
   INITIAL_LEADERBOARD,
   INITIAL_MISSIONS,
   INITIAL_STORE_ITEMS,
@@ -22,22 +18,28 @@ import {
 } from './mockPlayerData';
 import { HomeTab } from './tabs/HomeTab';
 import { MatchesTab } from './tabs/MatchesTab';
-import { WalletTab } from './tabs/WalletTab';
 import { RewardsTab } from './tabs/RewardsTab';
 import { ProfileTab } from './tabs/ProfileTab';
 import { MatchDetailModal } from './components/MatchDetailModal';
 import { JoinMatchModal } from './components/JoinMatchModal';
-import { AddMoneyModal } from './components/AddMoneyModal';
-import { WithdrawModal } from './components/WithdrawModal';
 import { SpinWheelModal } from './components/SpinWheelModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { ReportModal } from './components/ReportModal';
+import { OrganizerConsole } from './components/OrganizerConsole';
+import { OnboardingModal } from './components/OnboardingModal';
+import { AuthModal } from './components/AuthModal';
+import { SquadModal } from './components/SquadModal';
+import { ShareCardModal } from './components/ShareCardModal';
+import { TournamentService } from '../services/tournamentService';
+import { AuthService } from '../services/authService';
+import { CoinService } from '../services/coinService';
+import { NotificationService } from '../services/notificationService';
+import { LeaderboardService } from '../services/leaderboardService';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import {
   Home,
   Trophy,
-  Wallet,
   Award,
   User,
   Sliders,
@@ -49,28 +51,56 @@ interface PlayerAppProps {
 }
 
 export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
-  const [currentTab, setCurrentTab] = useState<'home' | 'matches' | 'wallet' | 'rewards' | 'profile'>('home');
-  const [profile, setProfile] = useState<PlayerProfile>(INITIAL_PLAYER_PROFILE);
-  const [wallet, setWallet] = useState<WalletBalance>(INITIAL_WALLET);
-  const [coins, setCoins] = useState<number>(INITIAL_COIN_BALANCE);
-  const [matches, setMatches] = useState<PlayerMatch[]>(INITIAL_MATCHES);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
+  const [currentTab, setCurrentTab] = useState<'home' | 'matches' | 'rewards' | 'profile'>('home');
+  const [matchesSubTab, setMatchesSubTab] = useState<'Upcoming' | 'Live' | 'Completed' | 'My Matches'>('Upcoming');
+
+  const [profile, setProfile] = useState<PlayerProfile>(() => {
+    return AuthService.getCurrentUser() || INITIAL_PLAYER_PROFILE;
+  });
+
+  const [coins, setCoins] = useState<number>(() => {
+    return CoinService.getPlayerBalance();
+  });
+
+  const [matches, setMatches] = useState<PlayerMatch[]>(() => {
+    return TournamentService.getPlayerMatches();
+  });
+
   const [missions, setMissions] = useState<Mission[]>(INITIAL_MISSIONS);
   const [storeItems, setStoreItems] = useState<RewardStoreItem[]>(INITIAL_STORE_ITEMS);
-  const [notifications, setNotifications] = useState<PlayerNotification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<PlayerNotification[]>(() => {
+    return NotificationService.getNotifications();
+  });
+
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
   const [hasSpunToday, setHasSpunToday] = useState(false);
 
   // Modals state
   const [selectedMatchForDetail, setSelectedMatchForDetail] = useState<PlayerMatch | null>(null);
   const [selectedMatchForJoin, setSelectedMatchForJoin] = useState<PlayerMatch | null>(null);
-  const [showAddMoney, setShowAddMoney] = useState(false);
-  const [showWithdraw, setShowWithdraw] = useState(false);
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showOrganizerConsole, setShowOrganizerConsole] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSquadModal, setShowSquadModal] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [reportDefaultMatchId, setReportDefaultMatchId] = useState<string>('m1');
+
+  // Check onboarding on initial mount
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('ff_arena_onboarding_completed');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('ff_arena_onboarding_completed', 'true');
+    setShowOnboarding(false);
+  };
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -87,139 +117,81 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Join Match Handler
+  // Join Free Tournament Handler
   const handleJoinSuccess = (match: PlayerMatch, teamMembers: string[]) => {
-    // Deduct entry fee
-    if (match.entryFee > 0) {
-      setWallet((prev) => {
-        let remaining = match.entryFee;
-        let newBonus = prev.bonus;
-        let newDeposit = prev.deposit;
-        let newWinnings = prev.winnings;
-
-        if (newBonus >= remaining) {
-          newBonus -= remaining;
-          remaining = 0;
-        } else {
-          remaining -= newBonus;
-          newBonus = 0;
-        }
-
-        if (remaining > 0 && newDeposit >= remaining) {
-          newDeposit -= remaining;
-          remaining = 0;
-        } else if (remaining > 0) {
-          remaining -= newDeposit;
-          newDeposit = 0;
-          newWinnings = Math.max(0, newWinnings - remaining);
-        }
-
-        return {
-          deposit: newDeposit,
-          winnings: newWinnings,
-          bonus: newBonus,
-          total: newDeposit + newWinnings + newBonus,
-        };
-      });
-
-      // Add to transactions
-      const newTx: WalletTransaction = {
-        id: `tx_${Date.now()}`,
-        type: 'entry_fee',
-        title: `Match Entry: ${match.title}`,
-        amount: -match.entryFee,
-        date: 'Just now',
-        status: 'Completed',
-        refId: match.id,
-      };
-      setTransactions((prev) => [newTx, ...prev]);
-    }
-
     // Update match state
-    setMatches((prev) =>
-      prev.map((m) =>
-        m.id === match.id
-          ? {
-              ...m,
-              joinedSlots: m.joinedSlots + 1,
-              userJoined: true,
-              isRoomRevealed: true,
-              roomId: m.roomId || '884910',
-              roomPassword: m.roomPassword || 'ffpro99',
-            }
-          : m
-      )
+    const updatedMatches = matches.map((m) =>
+      m.id === match.id
+        ? {
+            ...m,
+            joinedSlots: Math.min(m.maxSlots, m.joinedSlots + 1),
+            userJoined: true,
+            roomId: m.roomId || '884910',
+            roomPassword: m.roomPassword || 'ffpro99',
+          }
+        : m
     );
+
+    setMatches(updatedMatches);
+    TournamentService.savePlayerMatches(updatedMatches);
+
+    // Record registration in TournamentService
+    TournamentService.addPlayerRegistration({
+      id: `reg_${Date.now()}`,
+      tournamentId: match.id,
+      tournamentTitle: match.title,
+      userId: profile.uid,
+      inGameName: profile.inGameName,
+      ffUid: profile.ffUid,
+      teamMembers,
+      registeredAt: 'Just now',
+      status: 'Confirmed',
+    });
+
+    // Award +20 Loyalty coins for participation
+    const { newBalance } = CoinService.earnPlayerCoins(
+      20,
+      'tournament_join',
+      `Tournament Registration: ${match.title}`
+    );
+    setCoins(newBalance);
+
+    // Send in-app notification
+    const newNotif = NotificationService.addNotification(
+      `Slot Confirmed: ${match.title}`,
+      `You have reserved a free slot. Room credentials will unlock 15 minutes before kick-off.`,
+      'room'
+    );
+    setNotifications((prev) => [newNotif, ...prev]);
 
     setSelectedMatchForJoin(null);
     setSelectedMatchForDetail(null);
-    addToast('success', `Joined ${match.title}! Slot confirmed.`);
-  };
-
-  // Add Money Handler
-  const handleAddMoneySuccess = (amount: number, upiApp: string) => {
-    setWallet((prev) => ({
-      ...prev,
-      deposit: prev.deposit + amount,
-      total: prev.total + amount,
-    }));
-
-    const newTx: WalletTransaction = {
-      id: `tx_${Date.now()}`,
-      type: 'deposit',
-      title: `UPI Add Money (${upiApp})`,
-      amount,
-      date: 'Just now',
-      status: 'Completed',
-      refId: `upi_${Date.now()}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
-
-    setShowAddMoney(false);
-    addToast('success', `₹${amount} deposited successfully via ${upiApp}!`);
-  };
-
-  // Withdraw Handler
-  const handleWithdrawSuccess = (amount: number, upiId: string) => {
-    setWallet((prev) => ({
-      ...prev,
-      winnings: prev.winnings - amount,
-      total: prev.total - amount,
-    }));
-
-    const newTx: WalletTransaction = {
-      id: `tx_${Date.now()}`,
-      type: 'withdrawal',
-      title: `Instant UPI Payout to ${upiId}`,
-      amount: -amount,
-      date: 'Just now',
-      status: 'Completed',
-      refId: `wth_${Date.now()}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
-
-    setShowWithdraw(false);
-    addToast('success', `₹${amount} payout initiated to ${upiId}!`);
+    addToast('success', `Free slot reserved in ${match.title}! +20 Loyalty Coins earned.`);
   };
 
   // Daily Check In Handler
   const handleDailyCheckIn = () => {
     if (hasCheckedInToday) return;
     setHasCheckedInToday(true);
-    setCoins((prev) => prev + 60);
-    setWallet((prev) => ({
-      ...prev,
-      bonus: prev.bonus + 10,
-      total: prev.total + 10,
-    }));
-    addToast('success', '+60 Loyalty Coins and ₹10 Cash Bonus claimed!');
+    const { newBalance } = CoinService.earnPlayerCoins(
+      50,
+      'daily_checkin',
+      'Day 5 Login Streak Bonus'
+    );
+    setCoins(newBalance);
+    addToast('success', '+50 Loyalty Coins claimed for your login streak!');
   };
 
   // Spin Wheel Win Handler
   const handleSpinWin = (winCoins: number, label: string) => {
     setHasSpunToday(true);
-    setCoins((prev) => prev + winCoins);
-    addToast('success', `Prize claimed: ${label}!`);
+    const { newBalance } = CoinService.earnPlayerCoins(
+      winCoins,
+      'spin_wheel',
+      `Daily Spin Win: ${label}`
+    );
+    setCoins(newBalance);
+    addToast('success', `Prize claimed: ${label}! +${winCoins} coins added.`);
   };
 
   // Claim Mission Handler
@@ -230,18 +202,35 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
     setMissions((prev) =>
       prev.map((m) => (m.id === missionId ? { ...m, isClaimed: true } : m))
     );
-    setCoins((prev) => prev + mis.rewardCoins);
+
+    const { newBalance } = CoinService.earnPlayerCoins(
+      mis.rewardCoins,
+      'mission',
+      `Completed: ${mis.title}`
+    );
+    setCoins(newBalance);
     addToast('success', `Claimed +${mis.rewardCoins} Loyalty Coins!`);
   };
 
   // Redeem Store Item
   const handleRedeemItem = (item: RewardStoreItem) => {
     if (coins < item.coins) {
-      addToast('error', 'Insufficient coins to redeem this item.');
+      addToast('error', 'Insufficient coins to redeem this cosmetic item.');
       return;
     }
-    setCoins((prev) => prev - item.coins);
-    addToast('success', `Redeemed ${item.title}! Check your inventory.`);
+    try {
+      const { newBalance } = CoinService.spendPlayerCoins(
+        item.coins,
+        `Redeemed: ${item.title}`
+      );
+      setCoins(newBalance);
+      setStoreItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, isPurchased: true } : i))
+      );
+      addToast('success', `Redeemed ${item.title}! Equipped on your profile.`);
+    } catch (err: any) {
+      addToast('error', err.message || 'Redemption failed');
+    }
   };
 
   // Copy helper
@@ -253,18 +242,18 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
   // Dispute Report submit
   const handleReportSubmit = (data: { category: string; matchId: string; description: string; proofUrl: string }) => {
     setShowReportModal(false);
-    addToast('success', `Dispute ticket #${Math.floor(1000 + Math.random() * 9000)} submitted to referee.`);
+    addToast('success', `Fair-play ticket #${Math.floor(1000 + Math.random() * 9000)} submitted to referees.`);
   };
 
   const unreadNotifsCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-[#F5F5FA] font-sora selection:bg-[#C8FF3D] selection:text-black flex justify-center">
+    <div className="min-h-screen bg-[#0A0A0F] text-[#FFFFFF] font-sora selection:bg-[#C8FF3D] selection:text-black flex justify-center">
       {/* Toast Alert Manager */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {/* Mobile-first centered frame container (360px - 430px) */}
-      <div className="w-full max-w-[430px] min-h-screen bg-[#0A0A0F] border-x border-[#23233A]/50 relative flex flex-col shadow-2xl">
+      <div className="w-full max-w-[430px] min-h-screen bg-[#0A0A0F] border-x border-[#262640]/50 relative flex flex-col shadow-2xl">
         {/* Floating Quick Admin Switcher Button */}
         <div className="absolute top-2 right-2 z-40 opacity-30 hover:opacity-100 transition-opacity">
           <button
@@ -281,20 +270,25 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
           {currentTab === 'home' && (
             <HomeTab
               profile={profile}
-              wallet={wallet}
               coins={coins}
               matches={matches}
               leaderboard={INITIAL_LEADERBOARD}
               unreadNotifsCount={unreadNotifsCount}
               onOpenNotifications={() => setShowNotifications(true)}
-              onOpenWallet={() => setCurrentTab('wallet')}
+              onOpenRewards={() => setCurrentTab('rewards')}
               onOpenSpinWheel={() => setShowSpinWheel(true)}
               onOpenLeaderboard={() => setShowLeaderboard(true)}
+              onOpenSquad={() => setShowSquadModal(true)}
               onOpenMatchDetail={(m) => setSelectedMatchForDetail(m)}
-              onSelectCategory={(cat) => setCurrentTab('matches')}
+              onSelectCategory={(cat) => {
+                if (cat === 'Live' || cat === 'Upcoming') {
+                  setMatchesSubTab(cat as any);
+                }
+                setCurrentTab('matches');
+              }}
               onDailyCheckIn={handleDailyCheckIn}
               hasCheckedInToday={hasCheckedInToday}
-              onShareReferral={() => handleCopyText(`Join me on FF Arena with my referral code ${profile.referralCode} to get ₹25 free!`)}
+              onShareReferral={() => handleCopyText(`Join me on FF Arena with my referral code ${profile.referralCode} to both get 100 bonus coins!`)}
               onOpenSupport={() => setShowReportModal(true)}
             />
           )}
@@ -302,6 +296,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
           {currentTab === 'matches' && (
             <MatchesTab
               matches={matches}
+              initialSubTab={matchesSubTab}
               onOpenMatchDetail={(m) => setSelectedMatchForDetail(m)}
               onJoinMatch={(m) => setSelectedMatchForJoin(m)}
               onOpenReportModal={(matchId) => {
@@ -309,16 +304,6 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
                 setShowReportModal(true);
               }}
               onCopyText={handleCopyText}
-            />
-          )}
-
-          {currentTab === 'wallet' && (
-            <WalletTab
-              wallet={wallet}
-              transactions={transactions}
-              isKycVerified={profile.isKycVerified}
-              onOpenAddMoney={() => setShowAddMoney(true)}
-              onOpenWithdraw={() => setShowWithdraw(true)}
             />
           )}
 
@@ -339,22 +324,31 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
             <ProfileTab
               profile={profile}
               recentMatches={matches.filter((m) => m.userJoined)}
-              onUpdateProfile={(updated) => setProfile((p) => ({ ...p, ...updated }))}
+              onUpdateProfile={(updated) => {
+                const newProfile = AuthService.updateProfile(updated);
+                setProfile(newProfile);
+              }}
               onCopyText={handleCopyText}
               onSwitchToAdmin={onSwitchToAdmin}
-              onLogout={() => addToast('info', 'Logged out of player account.')}
+              onOpenOrganizerConsole={() => setShowOrganizerConsole(true)}
+              onOpenSquad={() => setShowSquadModal(true)}
+              onOpenShareCard={() => setShowShareCard(true)}
+              onLogout={() => {
+                AuthService.logout();
+                addToast('info', 'Logged out of player account.');
+                setShowAuthModal(true);
+              }}
               onOpenSupport={() => setShowReportModal(true)}
             />
           )}
         </div>
 
-        {/* Floating Pill Bottom Navigation (5 tabs with glow) */}
+        {/* Floating Pill Bottom Navigation (Strictly 4 tabs with lime glow) */}
         <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-[400px]">
-          <nav className="bg-[#14141F]/90 backdrop-blur-xl border border-[#23233A] rounded-full p-1.5 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+          <nav className="bg-[#14141F]/90 backdrop-blur-xl border border-[#262640] rounded-full p-1.5 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
             {[
               { id: 'home', label: 'Home', icon: Home },
               { id: 'matches', label: 'Matches', icon: Trophy },
-              { id: 'wallet', label: 'Wallet', icon: Wallet },
               { id: 'rewards', label: 'Rewards', icon: Award },
               { id: 'profile', label: 'Profile', icon: User },
             ].map((tab) => {
@@ -367,10 +361,10 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
                   className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-full transition-all duration-300 relative ${
                     isActive
                       ? 'text-[#C8FF3D] font-black'
-                      : 'text-[#9498AE] hover:text-white font-medium'
+                      : 'text-[#A7A7C0] hover:text-white font-medium'
                   }`}
                 >
-                  {/* Active glow backing pill */}
+                  {/* Active lime glow backing pill */}
                   {isActive && (
                     <div className="absolute inset-0 bg-[#C8FF3D]/15 rounded-full border border-[#C8FF3D]/40 shadow-[0_0_15px_rgba(200,255,61,0.25)] -z-10" />
                   )}
@@ -397,31 +391,9 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
         <JoinMatchModal
           match={selectedMatchForJoin}
           profile={profile}
-          wallet={wallet}
           onClose={() => setSelectedMatchForJoin(null)}
           onSuccess={handleJoinSuccess}
-          onOpenAddMoney={() => {
-            setSelectedMatchForJoin(null);
-            setShowAddMoney(true);
-          }}
         />
-
-        {showAddMoney && (
-          <AddMoneyModal
-            onClose={() => setShowAddMoney(false)}
-            onSuccess={handleAddMoneySuccess}
-          />
-        )}
-
-        {showWithdraw && (
-          <WithdrawModal
-            wallet={wallet}
-            linkedUpi={profile.linkedUpiId}
-            isKycVerified={profile.isKycVerified}
-            onClose={() => setShowWithdraw(false)}
-            onSuccess={handleWithdrawSuccess}
-          />
-        )}
 
         {showSpinWheel && (
           <SpinWheelModal
@@ -433,7 +405,7 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
 
         {showLeaderboard && (
           <LeaderboardModal
-            players={INITIAL_LEADERBOARD}
+            players={LeaderboardService.getWeekly()}
             onClose={() => setShowLeaderboard(false)}
           />
         )}
@@ -443,7 +415,8 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
             notifications={notifications}
             onClose={() => setShowNotifications(false)}
             onMarkAllRead={() => {
-              setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+              const read = NotificationService.markAllAsRead();
+              setNotifications(read);
               addToast('info', 'All notifications marked as read');
             }}
           />
@@ -454,6 +427,53 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
             defaultMatchId={reportDefaultMatchId}
             onClose={() => setShowReportModal(false)}
             onSubmit={handleReportSubmit}
+          />
+        )}
+
+        {showSquadModal && (
+          <SquadModal
+            isOpen={showSquadModal}
+            onClose={() => setShowSquadModal(false)}
+            onShowToast={addToast}
+          />
+        )}
+
+        {showShareCard && (
+          <ShareCardModal
+            isOpen={showShareCard}
+            profile={profile}
+            onClose={() => setShowShareCard(false)}
+            onShowToast={addToast}
+          />
+        )}
+
+        {showOnboarding && (
+          <OnboardingModal
+            isOpen={showOnboarding}
+            onClose={handleCloseOnboarding}
+          />
+        )}
+
+        {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onSuccess={(u) => {
+              setProfile(u);
+              addToast('success', `Welcome, ${u.name}!`);
+            }}
+          />
+        )}
+
+        {showOrganizerConsole && (
+          <OrganizerConsole
+            onClose={() => setShowOrganizerConsole(false)}
+            matches={matches}
+            onRefreshMatches={() => {
+              setMatches([...TournamentService.getPlayerMatches()]);
+              setNotifications([...NotificationService.getNotifications()]);
+            }}
+            onShowToast={addToast}
           />
         )}
       </div>

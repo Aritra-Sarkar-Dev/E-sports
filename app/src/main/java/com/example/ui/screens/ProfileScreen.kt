@@ -43,7 +43,7 @@ fun ProfileScreen(
         "TOTAL KILLS" to "${profile.kills}",
         "K/D RATIO" to "${profile.kdRatio}",
         "WIN RATE" to "${profile.winRate}%",
-        "EARNINGS" to "₹${profile.totalEarnings}"
+        "COINS" to "${profile.totalEarnings}"
     )
 
     val badges = listOf(
@@ -51,7 +51,7 @@ fun ProfileScreen(
         "Squad Leader" to Icons.Default.Groups,
         "Clutch God" to Icons.Default.FlashOn,
         "Grandmaster" to Icons.Default.MilitaryTech,
-        "Top Earner" to Icons.Default.MonetizationOn
+        "Top Player" to Icons.Default.EmojiEvents
     )
 
     LazyColumn(
@@ -228,7 +228,7 @@ fun ProfileScreen(
                                             value,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Black,
-                                            color = if (label == "EARNINGS") GoldPrize else TextPrimary
+                                            color = if (label == "COINS") GoldPrize else TextPrimary
                                         )
                                     }
                                 }
@@ -303,8 +303,8 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("INVITE & EARN ₹50", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                        Text("Share your code with friends to get ₹50 cash bonus when they join.", fontSize = 11.sp, color = TextMuted)
+                        Text("INVITE FRIENDS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Share your code and both of you get 100 bonus coins.", fontSize = 11.sp, color = TextMuted)
                     }
 
                     Button(
@@ -349,14 +349,6 @@ fun ProfileScreen(
                     Divider(color = CardBorder, thickness = 0.5.dp)
 
                     SettingItem(
-                        icon = Icons.Default.AccountBalance,
-                        title = "Linked UPI & KYC Verification",
-                        subtitle = if (profile.isKycVerified) "Verified: ${profile.linkedUpi}" else "Pending Verification",
-                        onClick = onOpenKyc
-                    )
-                    Divider(color = CardBorder, thickness = 0.5.dp)
-
-                    SettingItem(
                         icon = Icons.Default.Notifications,
                         title = "Notification Preferences",
                         subtitle = "Match reminders, room passwords, alerts",
@@ -367,7 +359,7 @@ fun ProfileScreen(
                     SettingItem(
                         icon = Icons.Default.Security,
                         title = "Fair Play & Anti-Cheat Policy",
-                        subtitle = "Zero tolerance for emulators or hacks",
+                        subtitle = "Free entry. Prizes are sponsor-funded.",
                         onClick = { onOpenSettings("fairplay") }
                     )
                     Divider(color = CardBorder, thickness = 0.5.dp)
