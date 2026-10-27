@@ -884,3 +884,610 @@ fun ReportModal(
         }
     }
 }
+
+@Composable
+fun PrizeHistoryModal(
+    prizes: List<PrizeRecord>,
+    onDismiss: () -> Unit,
+    onSelectPrize: (PrizeRecord) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("prize_history_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("SPONSOR PRIZE HISTORY", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                        Text("Sponsor-funded prizes won in tournaments", fontSize = 11.sp, color = TextSecondary)
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(prizes) { prize ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelectPrize(prize) },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(prize.tournamentTitle, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                    Surface(
+                                        color = when (prize.status) {
+                                            "Delivered by sponsor" -> NeonLime.copy(alpha = 0.2f)
+                                            "Sponsor notified" -> GoldCoins.copy(alpha = 0.2f)
+                                            else -> CardBorder
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            prize.status,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = when (prize.status) {
+                                                "Delivered by sponsor" -> NeonLime
+                                                "Sponsor notified" -> GoldCoins
+                                                else -> TextSecondary
+                                            },
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("${prize.rank} • Sponsor: ${prize.sponsorName}", fontSize = 11.sp, color = TextSecondary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("Prize: ${prize.sponsorPrize}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonLime)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PrizeDetailModal(
+    prize: PrizeRecord,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("prize_detail_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("PRIZE STATUS TIMELINE", fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                        Text(prize.tournamentTitle, fontSize = 11.sp, color = TextSecondary)
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Prize: ${prize.sponsorPrize}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Rank: ${prize.rank}", fontSize = 11.sp, color = TextPrimary)
+                        Text("Sponsor: ${prize.sponsorName}", fontSize = 11.sp, color = TextSecondary)
+                    }
+                }
+
+                // Timeline steps
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TimelineStep("1. Result Recorded", true)
+                    TimelineStep("2. Sponsor Notified", prize.status == "Sponsor notified" || prize.status == "Delivered by sponsor")
+                    TimelineStep("3. Delivered by Sponsor", prize.status == "Delivered by sponsor")
+                }
+
+                Text(
+                    text = "Prizes are delivered by the sponsor outside the app. The organizer will contact you via your registered email or Telegram.",
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    lineHeight = 15.sp
+                )
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = ElevatedSurface,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Organizer Contact Support", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("support@ffarena.esports • @FFArenaSupportBot", fontSize = 11.sp, color = NeonLime)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimelineStep(text: String, isDone: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(if (isDone) NeonLime else CardBorder),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isDone) {
+                Icon(Icons.Default.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(12.dp))
+            }
+        }
+        Text(text, fontSize = 12.sp, fontWeight = if (isDone) FontWeight.Bold else FontWeight.Normal, color = if (isDone) Color.White else TextSecondary)
+    }
+}
+
+@Composable
+fun EditProfileModal(
+    currentIgn: String,
+    currentUid: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var ign by remember { mutableStateOf(currentIgn) }
+    var uid by remember { mutableStateOf(currentUid) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("edit_profile_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("EDIT PLAYER PROFILE", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                OutlinedTextField(
+                    value = ign,
+                    onValueChange = { ign = it },
+                    label = { Text("In-Game Name (IGN)", fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = uid,
+                    onValueChange = { uid = it },
+                    label = { Text("Free Fire Numeric UID (8-12 digits)", fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                if (errorMsg != null) {
+                    Text(errorMsg!!, fontSize = 11.sp, color = LiveRed)
+                }
+
+                Button(
+                    onClick = {
+                        if (ign.isBlank()) {
+                            errorMsg = "IGN cannot be blank"
+                            return@Button
+                        }
+                        if (!uid.matches(Regex("^[0-9]{8,12}$"))) {
+                            errorMsg = "Free Fire UID must be 8-12 digits"
+                            return@Button
+                        }
+                        onSave(ign, uid)
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime, contentColor = Color.Black)
+                ) {
+                    Text("Save Changes", fontSize = 14.sp, fontWeight = FontWeight.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VerifyAccountModal(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("verify_account_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("VERIFY ACCOUNT", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VerifyStep("Free Fire UID Linked (8-12 digits)", true)
+                    VerifyStep("Age 18+ Confirmed", true)
+                    VerifyStep("Minimum Account Level 20+", true)
+                    VerifyStep("Fair Play Telemetry Check", true)
+                }
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = NeonLime.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Verified, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
+                        Text("Account Fully Verified for Sponsor Tournaments", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonLime)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VerifyStep(title: String, isDone: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(ElevatedSurface)
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Surface(
+            color = if (isDone) NeonLime.copy(alpha = 0.2f) else CardBorder,
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(if (isDone) "Verified ✓" else "Pending", fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (isDone) NeonLime else TextSecondary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+        }
+    }
+}
+
+@Composable
+fun FairPlayModal(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("fair_play_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("FAIR PLAY & ANTI-CHEAT", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { Text("1. Mobile Only Policy: PC emulators, macros, and third-party scripts are strictly prohibited.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("2. Teaming Prohibition: Teaming up in Solo or collusion across squads results in instant disqualification.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("3. Penalties: First offense warning, second offense permanent ban from all sponsor cups.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("4. Free Entry Model: Free entry. Prizes are sponsor-funded. 18+ only.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeonLime, lineHeight = 16.sp) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TermsModal(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("terms_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("TERMS & PRIVACY POLICY", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { Text("• 100% Free Entry Esports Platform with Sponsor-Funded Prizes.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("• No Financial Transactions: Zero wallet, deposit, withdraw, entry fee, or cash wagers.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("• Age Restriction: Strictly 18+ participants only.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                    item { Text("• Data Privacy: FF UIDs and IGNs are used solely for custom room verification.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HelpSupportModal(onDismiss: () -> Unit, onShowToast: (String) -> Unit) {
+    var subject by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("help_support_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("HELP & DISPUTE SUPPORT", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item {
+                        Text("FAQ", fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Q: How do I get room credentials?\nA: They automatically unlock 15 minutes before kick-off.", fontSize = 11.sp, color = TextSecondary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Q: How are prizes delivered?\nA: Sponsors contact winners via email or Telegram.", fontSize = 11.sp, color = TextSecondary)
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("REPORT A ROOM PROBLEM / TICKET", fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                    }
+
+                    item {
+                        OutlinedTextField(
+                            value = subject,
+                            onValueChange = { subject = it },
+                            label = { Text("Issue Subject", fontSize = 11.sp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+
+                    item {
+                        OutlinedTextField(
+                            value = message,
+                            onValueChange = { message = it },
+                            label = { Text("Describe the problem...", fontSize = 11.sp) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                        )
+                    }
+
+                    item {
+                        Button(
+                            onClick = {
+                                if (subject.isNotBlank() && message.isNotBlank()) {
+                                    TournamentService.supportTickets.add(
+                                        SupportTicketRecord("t_${System.currentTimeMillis()}", "ViperSniper", subject, message, "Open", null)
+                                    )
+                                    onShowToast("Support ticket submitted!")
+                                    subject = ""
+                                    message = ""
+                                } else {
+                                    onShowToast("Fill out subject and message")
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                        ) {
+                            Text("Submit Support Ticket", color = Color.Black, fontWeight = FontWeight.Black)
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Official Telegram / Discord: @FFArenaSupportBot", fontSize = 11.sp, color = ElectricViolet)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReferralModal(profile: UserProfile, onCopyReferral: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                .testTag("referral_modal"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("INVITE FRIENDS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
+                }
+
+                Text("Share your referral code with friends. Both of you get 100 bonus coins!", fontSize = 12.sp, color = TextSecondary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+
+                Surface(
+                    color = ElevatedSurface,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, NeonLime)
+                ) {
+                    Text(
+                        profile.referralCode,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        color = NeonLime,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                    )
+                }
+
+                Button(
+                    onClick = onCopyReferral,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                ) {
+                    Text("Copy Referral Code", color = Color.Black, fontWeight = FontWeight.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LogoutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log Out", fontWeight = FontWeight.Black, color = Color.White) },
+        text = { Text("Are you sure you want to log out of FF Arena?", color = TextSecondary) },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = LiveRed)
+            ) {
+                Text("Log Out", color = Color.White, fontWeight = FontWeight.Black)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TextSecondary)
+            }
+        },
+        containerColor = CardSurface
+    )
+}
+

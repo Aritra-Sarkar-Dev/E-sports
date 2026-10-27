@@ -104,3 +104,37 @@ data class PublishedResult(
     val thirdPrize: String,
     val publishedAt: String = "Just now"
 )
+
+data class PrizeRecord(
+    val id: String,
+    val tournamentTitle: String,
+    val rank: String,
+    val sponsorName: String,
+    val sponsorPrize: String,
+    val date: String,
+    val status: String // Recorded, Sponsor notified, Delivered by sponsor
+)
+
+data class SupportTicketRecord(
+    val id: String,
+    val userIgn: String,
+    val subject: String,
+    val message: String,
+    val status: String, // Open, Closed
+    val reply: String? = null
+)
+
+data class AuditLogRecord(
+    val id: String,
+    val action: String,
+    val adminName: String,
+    val timestamp: String
+)
+
+data class UserManagementRecord(
+    val id: String,
+    val ign: String,
+    val ffUid: String,
+    val status: String // Active, Warned, Banned
+)
+

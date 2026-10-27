@@ -133,6 +133,64 @@ object TournamentService {
         )
     }
 
+    val prizeRecords = mutableStateListOf(
+        PrizeRecord("p1", "Midnight Blitz Champions League", "2nd Place", "OnePlus Gaming", "₹3,000 Trophy", "Yesterday", "Delivered by sponsor"),
+        PrizeRecord("p2", "Kalahari Survival Clash Weekend", "1st Place (Booyah)", "Cosmic Byte", "₹5,000 Gaming Kit", "22 Oct", "Sponsor notified"),
+        PrizeRecord("p3", "CyberFrey 2077 Grand Finals", "3rd Place", "Asus ROG Gaming", "₹2,000 Voucher", "15 Oct", "Recorded")
+    )
+
+    val supportTickets = mutableStateListOf(
+        SupportTicketRecord("t1", "ViperSniper", "Room password issue", "Room password was delayed by 2 minutes.", "Open", null),
+        SupportTicketRecord("t2", "SoulImmortal", "Prize delivery query", "When will the gaming kit arrive?", "Closed", "Shipped via courier tracking #IND88392")
+    )
+
+    val auditLogs = mutableStateListOf(
+        AuditLogRecord("a1", "Published results for CyberFray 2077", "admin@demo.com", "Today, 08:35 PM"),
+        AuditLogRecord("a2", "Updated room credentials for Kalahari Duo", "organizer@demo.com", "Today, 06:10 PM")
+    )
+
+    val usersList = mutableStateListOf(
+        UserManagementRecord("u1", "ViperSniper", "994821034", "Active"),
+        UserManagementRecord("u2", "SoulImmortal", "849201123", "Active"),
+        UserManagementRecord("u3", "RogueCheater", "119203948", "Banned")
+    )
+
+    fun updatePrizeStatus(prizeId: String, newStatus: String) {
+        val idx = prizeRecords.indexOfFirst { it.id == prizeId }
+        if (idx != -1) {
+            val old = prizeRecords[idx]
+            prizeRecords[idx] = old.copy(status = newStatus)
+            // Trigger notification
+            notifications.add(
+                0,
+                InAppNotification(
+                    id = "pnotif_${System.currentTimeMillis()}",
+                    title = "Prize Status Update! 🏆",
+                    message = "Your prize from ${old.tournamentTitle} was marked as '$newStatus'.",
+                    timeAgo = "Just now",
+                    type = "match",
+                    isRead = false
+                )
+            )
+        }
+    }
+
+    fun replyTicket(ticketId: String, replyMsg: String) {
+        val idx = supportTickets.indexOfFirst { it.id == ticketId }
+        if (idx != -1) {
+            val t = supportTickets[idx]
+            supportTickets[idx] = t.copy(status = "Closed", reply = replyMsg)
+        }
+    }
+
+    fun updateUserStatus(userId: String, newStatus: String) {
+        val idx = usersList.indexOfFirst { it.id == userId }
+        if (idx != -1) {
+            val u = usersList[idx]
+            usersList[idx] = u.copy(status = newStatus)
+        }
+    }
+
     fun sendAnnouncement(title: String, message: String, type: String = "system") {
         notifications.add(
             0,
@@ -147,3 +205,4 @@ object TournamentService {
         )
     }
 }
+

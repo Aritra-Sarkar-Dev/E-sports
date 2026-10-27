@@ -318,7 +318,7 @@ fun ProfileScreen(
             }
         }
 
-        // Settings & Policies (Always visible Organizer Console demo row + Demo toggle)
+        // Settings & Policies (Fully interactive rows)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -336,38 +336,57 @@ fun ProfileScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Column {
-                        // Demo Toggle: switch to organizer role
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Tune, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text("Demo: switch to organizer role", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text("Role: ${profile.role.uppercase()}", fontSize = 10.sp, color = TextSecondary)
-                                }
-                            }
-
-                            Switch(
-                                checked = profile.role == "organizer" || profile.role == "admin",
-                                onCheckedChange = { onToggleRole() },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.Black,
-                                    checkedTrackColor = NeonLime,
-                                    uncheckedThumbColor = Color.White,
-                                    uncheckedTrackColor = CardBorder
-                                )
-                            )
-                        }
+                        // Edit Profile
+                        SettingsItem(
+                            icon = Icons.Default.Edit,
+                            title = "Edit Player Profile",
+                            subtitle = "Update IGN and Free Fire UID",
+                            onClick = { onOpenSettings("edit_profile") }
+                        )
 
                         Divider(color = CardBorder, thickness = 1.dp)
 
-                        // Organizer Console row (ALWAYS VISIBLE FOR DEMO with DEMO badge)
+                        // Notifications Settings
+                        SettingsItem(
+                            icon = Icons.Default.Notifications,
+                            title = "Notifications & Alerts",
+                            subtitle = "Match reminders & room ID reveals",
+                            onClick = { onOpenSettings("notifications") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Verify Account
+                        SettingsItem(
+                            icon = Icons.Default.Verified,
+                            title = "Verify Account",
+                            subtitle = "UID verification & 18+ check",
+                            onClick = { onOpenSettings("verify") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Prize History
+                        SettingsItem(
+                            icon = Icons.Default.EmojiEvents,
+                            title = "Sponsor Prize History",
+                            subtitle = "Track recorded and delivered prizes",
+                            onClick = { onOpenSettings("prize_history") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Referral
+                        SettingsItem(
+                            icon = Icons.Default.CardGiftcard,
+                            title = "Invite Friends & Referral",
+                            subtitle = "Both get 100 bonus coins",
+                            onClick = { onOpenSettings("referral") }
+                        )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Demo Role Switch & Organizer Console
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -408,10 +427,10 @@ fun ProfileScreen(
 
                         Divider(color = CardBorder, thickness = 1.dp)
 
-                        // Responsible Gaming & 18+ Rules
+                        // Terms and Privacy
                         SettingsItem(
                             icon = Icons.Default.VerifiedUser,
-                            title = "Responsible Gaming & 18+ Rules",
+                            title = "Terms & Privacy Policy",
                             subtitle = "Certified non-gambling esports competition",
                             onClick = { onOpenSettings("terms") }
                         )
@@ -425,12 +444,23 @@ fun ProfileScreen(
                             subtitle = "24/7 Referee assistance",
                             onClick = { onOpenSettings("support") }
                         )
+
+                        Divider(color = CardBorder, thickness = 1.dp)
+
+                        // Logout
+                        SettingsItem(
+                            icon = Icons.Default.Logout,
+                            title = "Log Out",
+                            subtitle = "Sign out of your account",
+                            onClick = { onOpenSettings("logout") }
+                        )
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun StatCard(

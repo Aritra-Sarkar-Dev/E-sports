@@ -83,6 +83,15 @@ fun FFArenaPlayerApp() {
     var showLeaderboard by remember { mutableStateOf(false) }
     var showNotifications by remember { mutableStateOf(false) }
     var reportMatch by remember { mutableStateOf<EsportsMatch?>(null) }
+    var showPrizeHistory by remember { mutableStateOf(false) }
+    var selectedPrizeDetail by remember { mutableStateOf<PrizeRecord?>(null) }
+    var showEditProfile by remember { mutableStateOf(false) }
+    var showVerifyAccount by remember { mutableStateOf(false) }
+    var showFairPlay by remember { mutableStateOf(false) }
+    var showTerms by remember { mutableStateOf(false) }
+    var showHelpSupport by remember { mutableStateOf(false) }
+    var showReferral by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     fun showToast(message: String) {
         coroutineScope.launch {
@@ -220,7 +229,7 @@ fun FFArenaPlayerApp() {
                                 showToast("Code copied: ${profile.referralCode}. Both of you get 100 bonus coins!")
                             },
                             onOpenEditProfile = {
-                                showToast("Player Identity: ${profile.ign} (UID ${profile.ffUid})")
+                                showEditProfile = true
                             },
                             onOpenOrganizerConsole = {
                                 showOrganizerConsole = true
@@ -232,9 +241,15 @@ fun FFArenaPlayerApp() {
                             },
                             onOpenSettings = { setting ->
                                 when (setting) {
-                                    "fairplay" -> showToast("Fair Play: Zero cheats, telemetry radar active.")
-                                    "support" -> showToast("Referee Support: @FFArenaSupportBot")
-                                    "terms" -> showToast("18+ Only • Free entry sponsor competitions")
+                                    "edit_profile" -> showEditProfile = true
+                                    "notifications" -> showNotifications = true
+                                    "verify" -> showVerifyAccount = true
+                                    "prize_history" -> showPrizeHistory = true
+                                    "referral" -> showReferral = true
+                                    "fairplay" -> showFairPlay = true
+                                    "terms" -> showTerms = true
+                                    "support" -> showHelpSupport = true
+                                    "logout" -> showLogoutDialog = true
                                     else -> showToast("Opened $setting")
                                 }
                             }
@@ -323,6 +338,70 @@ fun FFArenaPlayerApp() {
             onSubmitReport = { reason, desc ->
                 showToast("Dispute ticket submitted to referee. Ticket ID: #DISP${System.currentTimeMillis() % 10000}")
             }
+        )
+    }
+
+    if (showPrizeHistory) {
+        PrizeHistoryModal(
+            prizes = TournamentService.prizeRecords,
+            onDismiss = { showPrizeHistory = false },
+            onSelectPrize = { selectedPrizeDetail = it }
+        )
+    }
+
+    selectedPrizeDetail?.let { prize ->
+        PrizeDetailModal(
+            prize = prize,
+            onDismiss = { selectedPrizeDetail = null }
+        )
+    }
+
+    if (showEditProfile) {
+        EditProfileModal(
+            currentIgn = profile.ign,
+            currentUid = profile.ffUid,
+            onDismiss = { showEditProfile = false },
+            onSave = { newIgn, newUid ->
+                profile = profile.copy(ign = newIgn, ffUid = newUid)
+                showToast("Profile updated successfully!")
+            }
+        )
+    }
+
+    if (showVerifyAccount) {
+        VerifyAccountModal(onDismiss = { showVerifyAccount = false })
+    }
+
+    if (showFairPlay) {
+        FairPlayModal(onDismiss = { showFairPlay = false })
+    }
+
+    if (showTerms) {
+        TermsModal(onDismiss = { showTerms = false })
+    }
+
+    if (showHelpSupport) {
+        HelpSupportModal(onDismiss = { showHelpSupport = false }, onShowToast = { showToast(it) })
+    }
+
+    if (showReferral) {
+        ReferralModal(
+            profile = profile,
+            onCopyReferral = {
+                clipboardManager.setText(AnnotatedString(profile.referralCode))
+                showToast("Referral code copied! Both get 100 bonus coins.")
+            },
+            onDismiss = { showReferral = false }
+        )
+    }
+
+    if (showLogoutDialog) {
+        LogoutDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                showToast("Logged out successfully.")
+            },
+            onDismiss = { showLogoutDialog = false }
         )
     }
 }

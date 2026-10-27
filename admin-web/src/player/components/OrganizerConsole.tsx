@@ -19,7 +19,10 @@ import {
   Send,
   Eye,
   RefreshCw,
-  UserPlus
+  UserPlus,
+  HelpCircle,
+  X,
+  Award
 } from 'lucide-react';
 
 interface OrganizerConsoleProps {
@@ -38,6 +41,18 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
   const [activeSection, setActiveSection] = useState<
     'dashboard' | 'create' | 'rooms' | 'registrations' | 'results' | 'announcements'
   >('dashboard');
+  const [showAdminGuide, setShowAdminGuide] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncNow = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      onRefreshMatches();
+      setRegistrations(TournamentService.getPlayerRegistrations());
+      setIsSyncing(false);
+      onShowToast('success', 'Tournament data & live registrations synchronized!');
+    }, 700);
+  };
 
   // --- Section 1: Create Tournament State ---
   const [title, setTitle] = useState('');
@@ -262,12 +277,30 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="px-2.5 py-1 text-xs font-bold text-[#9498AE] hover:text-white"
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncNow}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1C2E] hover:bg-[#23233A] text-xs font-bold text-[#C8FF3D] border border-[#23233A] rounded-xl transition-all"
+            title="Sync latest tournament data from backend"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+          </button>
+          <button
+            onClick={() => setShowAdminGuide(true)}
+            className="p-2 bg-[#1C1C2E] hover:bg-[#23233A] text-[#9498AE] hover:text-white border border-[#23233A] rounded-xl transition-colors"
+            title="Admin Guide"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onClose}
+            className="px-2.5 py-1 text-xs font-bold text-[#9498AE] hover:text-white"
+          >
+            Close
+          </button>
+        </div>
       </div>
 
       {/* Horizontal Section Switcher (Scrollable) */}
@@ -1075,6 +1108,80 @@ export const OrganizerConsole: React.FC<OrganizerConsoleProps> = ({
           </form>
         )}
       </div>
+
+      {/* Admin Guide Modal */}
+      {showAdminGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-[#14141F] border border-[#23233A] rounded-[28px] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#23233A] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/20 border border-[#C8FF3D]/40 flex items-center justify-center text-[#C8FF3D]">
+                  <HelpCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">Organizer Console Admin Guide</h3>
+                  <p className="text-[10px] text-[#9498AE]">Quick start guide for tournament directors</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAdminGuide(false)}
+                className="p-1.5 hover:bg-white/10 rounded-full text-[#9498AE] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-[#1C1C2E] border border-[#23233A] rounded-2xl space-y-1">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Trophy className="w-4 h-4 text-[#C8FF3D]" />
+                  <span>1. Tournaments & Create</span>
+                </div>
+                <p className="text-[11px] text-[#9498AE] pl-6 leading-relaxed">
+                  Create and configure free-entry sponsor cups. Specify prize pools, battle royale or clash squad modes, maps (Bermuda, Purgatory, etc.), start times, and slot limits.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#1C1C2E] border border-[#23233A] rounded-2xl space-y-1">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Key className="w-4 h-4 text-[#00E5FF]" />
+                  <span>2. Room Manager (Room ID & Password)</span>
+                </div>
+                <p className="text-[11px] text-[#9498AE] pl-6 leading-relaxed">
+                  Set the custom Free Fire room ID and password for matches. Configure auto-reveal timers (e.g. 15 minutes before kick-off) so registered players receive credentials securely.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#1C1C2E] border border-[#23233A] rounded-2xl space-y-1">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Award className="w-4 h-4 text-[#FFB800]" />
+                  <span>3. Publish Results</span>
+                </div>
+                <p className="text-[11px] text-[#9498AE] pl-6 leading-relaxed">
+                  Record Booyah podium standings (1st, 2nd, 3rd place), elimination counts, and sponsor prize awards. This updates player leaderboards and prize history logs.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#1C1C2E] border border-[#23233A] rounded-2xl space-y-1">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Users className="w-4 h-4 text-[#7B5CFF]" />
+                  <span>4. Registrations & Announcements</span>
+                </div>
+                <p className="text-[11px] text-[#9498AE] pl-6 leading-relaxed">
+                  Inspect active participant rosters, review UIDs, and broadcast push announcements directly to player inboxes.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAdminGuide(false)}
+              className="w-full py-2.5 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow transition-all"
+            >
+              Got it, Let's Manage
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
