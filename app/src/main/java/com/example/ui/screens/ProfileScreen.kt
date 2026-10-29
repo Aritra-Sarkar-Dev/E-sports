@@ -41,7 +41,7 @@ fun ProfileScreen(
             .background(BgDark)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
+        contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp) // Safe-area bottom padding
     ) {
         // Profile Card with Glowing Avatar (Supports long-press shortcut to Console)
         item {
@@ -119,7 +119,7 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 text = profile.ign,
-                                fontSize = 12.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeonLime
                             )
@@ -128,9 +128,9 @@ fun ProfileScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.clickable { onCopyUid() }
                             ) {
-                                Text("UID: ${profile.ffUid}", fontSize = 11.sp, color = TextSecondary)
+                                Text("UID: ${profile.ffUid}", fontSize = 12.sp, color = TextSecondary)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy UID", tint = TextSecondary, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy UID", tint = TextSecondary, modifier = Modifier.size(13.dp))
                             }
                         }
 
@@ -148,8 +148,8 @@ fun ProfileScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Level ${profile.level}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                Text("${profile.xp}/${profile.maxXp} XP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Level ${profile.level}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                Text("${profile.xp}/${profile.maxXp} XP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Box(
@@ -172,7 +172,7 @@ fun ProfileScreen(
             }
         }
 
-        // Dedicated Organizer Console Button (Shown ONLY when user.role is 'admin' or 'organizer')
+        // Dedicated Organizer Console Button (Shown when user has organizer or admin role)
         if (profile.role == "organizer" || profile.role == "admin") {
             item {
                 Card(
@@ -221,7 +221,7 @@ fun ProfileScreen(
                                         )
                                     }
                                 }
-                                Text("Create tournaments, set room ID, publish results", fontSize = 10.sp, color = TextSecondary)
+                                Text("Create tournaments, set room ID, publish results", fontSize = 11.sp, color = TextSecondary)
                             }
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
@@ -230,12 +230,12 @@ fun ProfileScreen(
             }
         }
 
-        // 6-Metric Stats Grid (NO real-money earnings! "PRIZES WON" count)
+        // 6-Metric Stats Grid (NO real-money earnings! "PRIZES WON" count that opens Prize History)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "CAREER STATISTICS",
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     letterSpacing = 1.sp
@@ -256,7 +256,23 @@ fun ProfileScreen(
                 ) {
                     StatCard("K/D Ratio", "${profile.kdRatio}", modifier = Modifier.weight(1f))
                     StatCard("Win Rate", "${profile.winRate}%", tint = ElectricViolet, modifier = Modifier.weight(1f))
-                    StatCard("PRIZES WON", "${profile.prizesWon}", tint = GoldCoins, modifier = Modifier.weight(1f))
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onOpenSettings("prize_history") },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldCoins.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("PRIZES WON", fontSize = 10.sp, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text("${profile.prizesWon} Prizes", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GoldCoins)
+                        }
+                    }
                 }
             }
         }
@@ -266,7 +282,7 @@ fun ProfileScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "EARNED BADGES",
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     letterSpacing = 1.sp
@@ -299,11 +315,11 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("INVITE FRIENDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("INVITE FRIENDS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = NeonLime)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text("Both of you get 100 bonus coins", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Both of you get 100 bonus coins", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text("Code: ${profile.referralCode}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
+                        Text("Code: ${profile.referralCode}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
                     }
 
                     Button(
@@ -312,7 +328,7 @@ fun ProfileScreen(
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text("Share", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                        Text("Share", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
                     }
                 }
             }
@@ -323,7 +339,7 @@ fun ProfileScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "SETTINGS & POLICIES",
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     letterSpacing = 1.sp
@@ -386,7 +402,7 @@ fun ProfileScreen(
 
                         Divider(color = CardBorder, thickness = 1.dp)
 
-                        // Demo Role Switch & Organizer Console
+                        // Organizer Console row with DEMO badge (Always reachable for testing)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -400,7 +416,7 @@ fun ProfileScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Organizer Console", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text("Organizer Console", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Surface(
                                             color = NeonLime,
@@ -409,7 +425,7 @@ fun ProfileScreen(
                                             Text("DEMO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                         }
                                     }
-                                    Text("Create tournaments, set room ID, publish results", fontSize = 10.sp, color = TextSecondary)
+                                    Text("Create tournaments, set room ID, publish results", fontSize = 11.sp, color = TextSecondary)
                                 }
                             }
                             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = NeonLime, modifier = Modifier.size(18.dp))
@@ -421,7 +437,7 @@ fun ProfileScreen(
                         SettingsItem(
                             icon = Icons.Default.Shield,
                             title = "Fair Play & Anti-Cheat Protocol",
-                            subtitle = "Free entry. Prizes are sponsor-funded.",
+                            subtitle = "Free entry. Prizes are sponsor-funded. 18+ only.",
                             onClick = { onOpenSettings("fairplay") }
                         )
 
@@ -431,7 +447,7 @@ fun ProfileScreen(
                         SettingsItem(
                             icon = Icons.Default.VerifiedUser,
                             title = "Terms & Privacy Policy",
-                            subtitle = "Certified non-gambling esports competition",
+                            subtitle = "Free entry. Prizes are sponsor-funded. 18+ only.",
                             onClick = { onOpenSettings("terms") }
                         )
 
@@ -441,7 +457,7 @@ fun ProfileScreen(
                         SettingsItem(
                             icon = Icons.Default.HelpOutline,
                             title = "Help & Dispute Support",
-                            subtitle = "24/7 Referee assistance",
+                            subtitle = "FAQ accordion, ticket form & referee support",
                             onClick = { onOpenSettings("support") }
                         )
 
@@ -451,7 +467,7 @@ fun ProfileScreen(
                         SettingsItem(
                             icon = Icons.Default.Logout,
                             title = "Log Out",
-                            subtitle = "Sign out of your account",
+                            subtitle = "Sign out of your session",
                             onClick = { onOpenSettings("logout") }
                         )
                     }
@@ -460,7 +476,6 @@ fun ProfileScreen(
         }
     }
 }
-
 
 @Composable
 fun StatCard(
@@ -479,7 +494,7 @@ fun StatCard(
             modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, fontSize = 9.sp, color = TextSecondary)
+            Text(label, fontSize = 10.sp, color = TextSecondary)
             Spacer(modifier = Modifier.height(2.dp))
             Text(value, fontSize = 14.sp, fontWeight = FontWeight.Black, color = tint)
         }
@@ -506,8 +521,8 @@ fun BadgeCard(
         ) {
             Text(emoji, fontSize = 20.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(title, fontSize = 10.sp, fontWeight = FontWeight.Black, color = tint)
-            Text(subtitle, fontSize = 8.sp, color = TextSecondary)
+            Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = tint)
+            Text(subtitle, fontSize = 9.sp, color = TextSecondary)
         }
     }
 }
@@ -531,8 +546,8 @@ fun SettingsItem(
             Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(subtitle, fontSize = 10.sp, color = TextSecondary)
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(subtitle, fontSize = 11.sp, color = TextSecondary)
             }
         }
         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))

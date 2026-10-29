@@ -9,6 +9,9 @@ data class EsportsMatch(
     val startTimeText: String,
     val prizePool: Int,
     val perKillXp: Int = 10,
+    val perKillPoints: Int = 2,
+    val minLevel: Int = 30,
+    val teamSize: String = "4 Players",
     val maxSlots: Int,
     val joinedSlots: Int,
     val status: String, // Upcoming, Live, Completed
@@ -19,7 +22,8 @@ data class EsportsMatch(
     val isRoomRevealed: Boolean = false,
     val myRank: Int? = null,
     val myKills: Int? = null,
-    val prizesWon: Int? = null
+    val prizesWon: Int? = null,
+    val rulesText: String = "Mobile device only. Emulators strictly prohibited. No hacks, teaming, or third-party scripts. Minimum Free Fire Level 30 required."
 )
 
 data class UserProfile(
@@ -85,15 +89,16 @@ data class TournamentRegistration(
     val ign: String,
     val ffUid: String,
     val registeredAt: String = "Just now",
-    val status: String = "Confirmed"
+    val status: String = "Confirmed" // Confirmed, Approved, Removed
 )
 
 data class PublishedResult(
     val tournamentId: String,
+    val tournamentTitle: String = "Tournament",
     val firstIgn: String,
     val firstUid: String,
     val firstKills: Int,
-    val firstPrize: String,
+    val firstPrize: String, // e.g. "Trophy + Kit (Sponsor value ₹5,000)"
     val secondIgn: String,
     val secondUid: String,
     val secondKills: Int,
@@ -110,7 +115,7 @@ data class PrizeRecord(
     val tournamentTitle: String,
     val rank: String,
     val sponsorName: String,
-    val sponsorPrize: String,
+    val sponsorPrize: String, // e.g. "Pro Gaming Headset (Sponsor value ₹3,000)"
     val date: String,
     val status: String // Recorded, Sponsor notified, Delivered by sponsor
 )
@@ -124,6 +129,17 @@ data class SupportTicketRecord(
     val reply: String? = null
 )
 
+data class DisputeReportRecord(
+    val id: String,
+    val tournamentTitle: String,
+    val reporterIgn: String,
+    val reportedIgn: String,
+    val reason: String,
+    val timestamp: String,
+    val status: String = "Pending", // Pending, Resolved, Dismissed
+    val details: String
+)
+
 data class AuditLogRecord(
     val id: String,
     val action: String,
@@ -135,6 +151,6 @@ data class UserManagementRecord(
     val id: String,
     val ign: String,
     val ffUid: String,
-    val status: String // Active, Warned, Banned
+    val status: String, // Active, Warned, Banned
+    val warningsCount: Int = 0
 )
-

@@ -3,7 +3,7 @@ package com.example.ui.model
 object MockData {
     val defaultProfile = UserProfile(
         name = "Aritra Sarkar",
-        ign = "⚡NEON_SOUL⚡",
+        ign = "NEON_SOUL",
         ffUid = "994821034",
         level = 42,
         xp = 3450,
@@ -14,7 +14,7 @@ object MockData {
         kills = 182,
         kdRatio = 4.2f,
         winRate = 29.2f,
-        prizesWon = 4,
+        prizesWon = 3,
         referralCode = "NEON99",
         role = "player"
     )
@@ -29,6 +29,9 @@ object MockData {
             startTimeText = "Today, 08:30 PM",
             prizePool = 50000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 30,
+            teamSize = "4 Players",
             maxSlots = 48,
             joinedSlots = 44,
             status = "Upcoming",
@@ -47,6 +50,9 @@ object MockData {
             startTimeText = "Today, 09:15 PM",
             prizePool = 5000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 25,
+            teamSize = "1 Player",
             maxSlots = 48,
             joinedSlots = 45, // < 10% left! (3 slots left)
             status = "Upcoming",
@@ -62,6 +68,9 @@ object MockData {
             startTimeText = "LIVE NOW",
             prizePool = 12000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 30,
+            teamSize = "2 Players",
             maxSlots = 24,
             joinedSlots = 24,
             status = "Live",
@@ -80,6 +89,9 @@ object MockData {
             startTimeText = "Tomorrow, 11:00 AM",
             prizePool = 3000,
             perKillXp = 10,
+            perKillPoints = 1,
+            minLevel = 20,
+            teamSize = "1 Player",
             maxSlots = 48,
             joinedSlots = 48,
             status = "Upcoming",
@@ -95,6 +107,9 @@ object MockData {
             startTimeText = "Tomorrow, 07:00 PM",
             prizePool = 25000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 35,
+            teamSize = "4 Players",
             maxSlots = 48,
             joinedSlots = 28,
             status = "Upcoming",
@@ -110,6 +125,9 @@ object MockData {
             startTimeText = "Tomorrow, 09:30 PM",
             prizePool = 5000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 25,
+            teamSize = "1 Player",
             maxSlots = 16,
             joinedSlots = 15, // 1 slot left!
             status = "Upcoming",
@@ -125,6 +143,9 @@ object MockData {
             startTimeText = "Yesterday, 11:30 PM",
             prizePool = 20000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 30,
+            teamSize = "4 Players",
             maxSlots = 48,
             joinedSlots = 48,
             status = "Completed",
@@ -143,6 +164,9 @@ object MockData {
             startTimeText = "22 Oct, 10:00 PM",
             prizePool = 10000,
             perKillXp = 10,
+            perKillPoints = 2,
+            minLevel = 30,
+            teamSize = "1 Player",
             maxSlots = 48,
             joinedSlots = 48,
             status = "Completed",
@@ -155,16 +179,16 @@ object MockData {
     )
 
     val leaderboardList = listOf(
-        LeaderboardRow(1, "Kabir Verma", "👑SOUL_IMMORTAL👑", 1450, 12, 34, 412),
-        LeaderboardRow(2, "Rohan Deshmukh", "⚡VIPER_STRIKE⚡", 1120, 8, 26, 320),
-        LeaderboardRow(3, "Sameer Khan", "🔥BLAZE_KID🔥", 940, 6, 21, 284),
-        LeaderboardRow(4, "Aritra Sarkar (You)", "⚡NEON_SOUL⚡", 680, 4, 14, 182),
-        LeaderboardRow(5, "Deepak Rao", "💀PHANTOM_KILL💀", 550, 3, 11, 154),
-        LeaderboardRow(6, "Manish Rawat", "🎯HEADSHOT_PRO🎯", 480, 3, 9, 139),
-        LeaderboardRow(7, "Aniket Sen", "🚀ROCKET_BOY🚀", 410, 2, 8, 122),
-        LeaderboardRow(8, "Tanya Roy", "🌸VALKYRIE_FF🌸", 360, 2, 7, 108),
-        LeaderboardRow(9, "Kunal Patil", "⚡TITAN_THUNDER⚡", 310, 1, 6, 95),
-        LeaderboardRow(10, "Aryan Mehta", "🛡️APEX_SHIELD🛡️", 270, 1, 5, 88)
+        LeaderboardRow(1, "Kabir Verma", "SOUL_IMMORTAL", 1450, 12, 34, 412),
+        LeaderboardRow(2, "Rohan Deshmukh", "VIPER_STRIKE", 1120, 8, 26, 320),
+        LeaderboardRow(3, "Sameer Khan", "BLAZE_KID", 940, 6, 21, 284),
+        LeaderboardRow(4, "Aritra Sarkar (You)", "NEON_SOUL", 680, 4, 14, 182),
+        LeaderboardRow(5, "Deepak Rao", "PHANTOM_KILL", 550, 3, 11, 154),
+        LeaderboardRow(6, "Manish Rawat", "HEADSHOT_PRO", 480, 3, 9, 139),
+        LeaderboardRow(7, "Aniket Sen", "ROCKET_BOY", 410, 2, 8, 122),
+        LeaderboardRow(8, "Tanya Roy", "VALKYRIE_FF", 360, 2, 7, 108),
+        LeaderboardRow(9, "Kunal Patil", "TITAN_THUNDER", 310, 1, 6, 95),
+        LeaderboardRow(10, "Aryan Mehta", "APEX_SHIELD", 270, 1, 5, 88)
     )
 
     val missionsList = listOf(

@@ -48,7 +48,7 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
   ];
 
   return (
-    <div className="space-y-4 pb-12 animate-fade-in">
+    <div className="space-y-4 pb-32 animate-fade-in">
       {/* Header */}
       <div className="px-4 pt-3 pb-1">
         <h2 className="text-lg font-black text-white flex items-center gap-2">
@@ -59,7 +59,7 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
 
       {/* Non-cash policy notice banner */}
       <div className="px-4">
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#1B1B2B] border border-[#262640] rounded-xl text-[10px] text-[#A7A7C0]">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#1B1B2B] border border-[#262640] rounded-xl text-xs text-[#A7A7C0]">
           <Info className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
           <span>Loyalty coins are non-cash game credits earned by playing and cannot be purchased or converted to real money.</span>
         </div>
@@ -69,14 +69,14 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
       <div className="px-4">
         <div className="relative rounded-[24px] overflow-hidden bg-[#14141F] border border-[#FFB800]/40 p-5 shadow-2xl flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] text-[#FFB800] font-bold uppercase tracking-wider block">
+            <span className="text-xs text-[#FFB800] font-bold uppercase tracking-wider block">
               Available Loyalty Coins
             </span>
             <div className="flex items-center gap-2">
               <span className="text-3xl font-black text-white">{coins}</span>
-              <Coins className="w-6 h-6 text-[#FFB800] animate-bounce" />
+              <Coins className="w-6 h-6 text-[#FFB800] " />
             </div>
-            <span className="text-[10px] text-[#A7A7C0] block">
+            <span className="text-xs text-[#A7A7C0] block">
               Redeem for match tickets, custom HUD themes & avatar frames
             </span>
           </div>
@@ -85,8 +85,8 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
             onClick={onOpenSpinWheel}
             className="flex flex-col items-center justify-center p-3 bg-[#FFB800]/10 border border-[#FFB800]/40 rounded-2xl text-[#FFB800] hover:bg-[#FFB800]/20 transition-all active:scale-95 shrink-0"
           >
-            <RotateCw className="w-6 h-6 mb-1 animate-spin-slow" />
-            <span className="text-[10px] font-black uppercase">Daily Spin</span>
+            <RotateCw className="w-6 h-6 mb-1 " />
+            <span className="text-xs font-black uppercase">Daily Spin</span>
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
           <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
             <CalendarCheck className="w-4 h-4 text-[#C8FF3D]" /> 7-Day Login Streak
           </span>
-          <span className="text-[10px] text-[#C8FF3D] font-bold">
+          <span className="text-xs text-[#C8FF3D] font-bold">
             {hasCheckedInToday ? 'Checked in today!' : 'Tap to claim today'}
           </span>
         </div>
@@ -119,13 +119,13 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
                       : 'bg-[#0A0A0F] border-[#262640] text-[#A7A7C0]'
                   }`}
                 >
-                  <span className="text-[9px] font-bold">D{s.day}</span>
+                  <span className="text-xs font-bold">D{s.day}</span>
                   {isChecked ? (
                     <CheckCircle2 className="w-4 h-4 text-[#C8FF3D]" />
                   ) : (
                     <Coins className="w-3.5 h-3.5 text-[#FFB800]" />
                   )}
-                  <span className="text-[9px] font-extrabold">+{s.coins}</span>
+                  <span className="text-xs font-extrabold">+{s.coins}</span>
                 </div>
               );
             })}
@@ -195,7 +195,7 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-[#7B5CFF]">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#7B5CFF]">
                       {m.type === 'daily' ? 'Daily Mission' : 'Weekly Quest'}
                     </span>
                     <h4 className="text-xs font-black text-white">{m.title}</h4>
@@ -215,24 +215,24 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-[#A7A7C0] font-mono">
+                    <span className="text-xs text-[#A7A7C0] font-mono">
                       {m.current}/{m.target}
                     </span>
                   </div>
 
                   {m.isClaimed ? (
-                    <span className="text-[11px] font-bold text-[#A7A7C0] flex items-center gap-1">
+                    <span className="text-xs font-bold text-[#A7A7C0] flex items-center gap-1">
                       <Check className="w-3.5 h-3.5 text-[#C8FF3D]" /> Claimed
                     </span>
                   ) : isCompleted ? (
                     <button
                       onClick={() => onClaimMission(m.id)}
-                      className="px-3 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-[11px] rounded-xl shadow active:scale-95"
+                      className="px-3 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow active:scale-95"
                     >
                       Claim Reward
                     </button>
                   ) : (
-                    <span className="text-[11px] font-bold text-[#A7A7C0]">In Progress</span>
+                    <span className="text-xs font-bold text-[#A7A7C0]">In Progress</span>
                   )}
                 </div>
               </div>
@@ -256,14 +256,14 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
                     alt={item.title}
                     className="w-full h-full object-cover"
                   />
-                  <span className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-black/70 backdrop-blur-md text-[9px] font-black text-[#C8FF3D] rounded-full uppercase">
+                  <span className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-black/70  text-xs font-black text-[#C8FF3D] rounded-full uppercase">
                     {item.category}
                   </span>
                 </div>
 
                 <div>
                   <h4 className="text-xs font-black text-white line-clamp-1">{item.title}</h4>
-                  <p className="text-[10px] text-[#A7A7C0] line-clamp-2 mt-0.5">{item.description}</p>
+                  <p className="text-xs text-[#A7A7C0] line-clamp-2 mt-0.5">{item.description}</p>
                 </div>
               </div>
 
@@ -274,14 +274,14 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
                 </div>
 
                 {item.isPurchased ? (
-                  <span className="text-[10px] font-black text-[#C8FF3D] bg-[#C8FF3D]/10 px-2 py-1 rounded-lg">
+                  <span className="text-xs font-black text-[#C8FF3D] bg-[#C8FF3D]/10 px-2 py-1 rounded-lg">
                     Equipped
                   </span>
                 ) : (
                   <button
                     onClick={() => onRedeemStoreItem(item)}
                     disabled={coins < item.coins}
-                    className="px-2.5 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] disabled:opacity-40 text-black font-extrabold text-[10px] rounded-lg shadow active:scale-95"
+                    className="px-2.5 py-1 bg-[#C8FF3D] hover:bg-[#b5f02c] disabled:opacity-40 text-black font-extrabold text-xs rounded-lg shadow active:scale-95"
                   >
                     Redeem
                   </button>

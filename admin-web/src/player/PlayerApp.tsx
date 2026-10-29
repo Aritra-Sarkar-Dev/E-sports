@@ -360,15 +360,13 @@ export const PlayerApp: React.FC<PlayerAppProps> = ({ onSwitchToAdmin }) => {
                   onClick={() => setCurrentTab(tab.id as any)}
                   className={`flex items-center justify-center transition-all duration-300 min-h-[44px] ${
                     isActive
-                      ? 'bg-[#C8FF3D] text-black font-extrabold px-4 py-2 rounded-full shadow-[0_0_16px_rgba(200,255,61,0.35)] gap-1.5'
-                      : 'text-[#A7A7C0] hover:text-white p-2.5 rounded-full hover:bg-white/5'
+                      ? 'bg-[#C8FF3D] text-black font-extrabold px-3 py-1.5 rounded-full shadow-[0_0_16px_rgba(200,255,61,0.35)] gap-1.5'
+                      : 'text-[#A7A7C0] hover:text-white px-2.5 py-1.5 rounded-full hover:bg-white/5 gap-1.5'
                   }`}
                   aria-label={tab.label}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  {isActive && (
-                    <span className="text-xs font-black tracking-wide leading-none">{tab.label}</span>
-                  )}
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className={`text-[11px] font-bold tracking-wide leading-none ${isActive ? 'text-black font-black' : 'text-[#A7A7C0]'}`}>{tab.label}</span>
                 </button>
               );
             })}

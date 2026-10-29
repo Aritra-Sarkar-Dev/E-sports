@@ -133,12 +133,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               alt={profile.inGameName}
               className="w-10 h-10 rounded-full object-cover border-2 border-[#C8FF3D] shadow-[0_0_10px_rgba(200,255,61,0.3)]"
             />
-            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#7B5CFF] text-white text-[9px] font-black rounded-full border border-[#0A0A0F]">
+            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#7B5CFF] text-white text-xs font-black rounded-full border border-[#0A0A0F]">
               42
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-[#A7A7C0] uppercase tracking-wider block">
+            <span className="text-xs text-[#A7A7C0] uppercase tracking-wider block">
               Welcome back
             </span>
             <h2 className="text-sm font-black text-white flex items-center gap-1">
@@ -168,7 +168,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           >
             <Bell className="w-4 h-4" />
             {unreadNotifsCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF4D6D] text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF4D6D] text-white text-xs font-black rounded-full flex items-center justify-center animate-pulse">
                 {unreadNotifsCount}
               </span>
             )}
@@ -193,10 +193,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/70 to-transparent p-4 flex flex-col justify-end">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider shadow">
+                  <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-xs rounded-full uppercase tracking-wider shadow">
                     {banner.tag}
                   </span>
-                  <span className="text-[10px] text-[#A7A7C0] font-semibold">
+                  <span className="text-xs text-[#A7A7C0] font-semibold">
                     {banner.sponsor}
                   </span>
                 </div>
@@ -208,7 +208,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <span className="text-xs font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.4)] block">
                       {banner.prizeLabel}
                     </span>
-                    <span className="text-[9px] text-[#7B5CFF] font-bold">
+                    <span className="text-xs text-[#7B5CFF] font-bold">
                       • Sponsor-funded prize
                     </span>
                   </div>
@@ -252,8 +252,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/15 flex items-center justify-center text-[#C8FF3D] mb-1">
               <CalendarCheck className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-bold text-white block">Streak</span>
-            <span className="text-[9px] text-[#C8FF3D] font-extrabold">{hasCheckedInToday ? 'Claimed' : '+50 Coins'}</span>
+            <span className="text-xs font-bold text-white block">Streak</span>
+            <span className="text-xs text-[#C8FF3D] font-extrabold">{hasCheckedInToday ? 'Claimed' : '+50 Coins'}</span>
           </button>
 
           {/* Daily Spin */}
@@ -264,8 +264,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <div className="w-8 h-8 rounded-xl bg-[#FFB800]/15 flex items-center justify-center text-[#FFB800] mb-1">
               <RotateCw className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-bold text-white block">Daily Spin</span>
-            <span className="text-[9px] text-[#FFB800] font-extrabold">Free Win</span>
+            <span className="text-xs font-bold text-white block">Daily Spin</span>
+            <span className="text-xs text-[#FFB800] font-extrabold">bonus coins</span>
           </button>
 
           {/* Squad */}
@@ -276,8 +276,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <div className="w-8 h-8 rounded-xl bg-[#7B5CFF]/15 flex items-center justify-center text-[#7B5CFF] mb-1">
               <Users className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-bold text-white block">My Squad</span>
-            <span className="text-[9px] text-[#7B5CFF] font-extrabold">4v4 Ready</span>
+            <span className="text-xs font-bold text-white block">My Squad</span>
+            <span className="text-xs text-[#7B5CFF] font-extrabold">4v4 Ready</span>
           </button>
 
           {/* Leaderboard */}
@@ -288,8 +288,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <div className="w-8 h-8 rounded-xl bg-[#C8FF3D]/15 flex items-center justify-center text-[#C8FF3D] mb-1">
               <Trophy className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-bold text-white block">Ranks</span>
-            <span className="text-[9px] text-[#C8FF3D] font-extrabold">Top Players</span>
+            <span className="text-xs font-bold text-white block">Ranks</span>
+            <span className="text-xs text-[#C8FF3D] font-extrabold">Top Players</span>
           </button>
         </div>
 
@@ -302,11 +302,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#C8FF3D] animate-ping" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#C8FF3D]">
+                <span className="text-xs font-black uppercase tracking-wider text-[#C8FF3D]">
                   NEXT MATCH KICK-OFF
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-[10px] bg-[#0A0A0F] border border-[#262640] px-2.5 py-0.5 rounded-full font-mono text-[#C8FF3D]">
+              <div className="flex items-center gap-1 text-xs bg-[#0A0A0F] border border-[#262640] px-2.5 py-0.5 rounded-full font-mono text-[#C8FF3D]">
                 <Clock className="w-3 h-3 text-[#C8FF3D]" />
                 <span>Room reveals in {roomCountdown}</span>
               </div>
@@ -330,11 +330,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-black text-[#C8FF3D] bg-[#C8FF3D]/15 px-2.5 py-1.5 rounded-xl border border-[#C8FF3D]/30 shadow">
+              <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap ml-3">
+                <span className="text-xs font-black text-[#C8FF3D] bg-[#C8FF3D]/15 px-3.5 py-2 rounded-xl border border-[#C8FF3D]/40 shadow whitespace-nowrap inline-flex items-center gap-1">
                   View Room
+                  <ChevronRight className="w-3.5 h-3.5 text-[#C8FF3D] group-hover:translate-x-0.5 transition-transform" />
                 </span>
-                <ChevronRight className="w-4 h-4 text-[#C8FF3D] group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </div>
@@ -373,7 +373,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </span>
               <button
                 onClick={() => onSelectCategory('Live')}
-                className="text-[11px] text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
+                className="text-xs text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
               >
                 View all <ChevronRight className="w-3 h-3" />
               </button>
@@ -394,14 +394,14 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.2 bg-[#FF4D6D]/20 text-[#FF4D6D] text-[9px] font-black rounded-full uppercase">
+                        <span className="px-1.5 py-0.2 bg-[#FF4D6D]/20 text-[#FF4D6D] text-xs font-black rounded-full uppercase">
                           LIVE
                         </span>
                         <h4 className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors truncate max-w-[170px]">
                           {m.title}
                         </h4>
                       </div>
-                      <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+                      <span className="text-xs text-[#A7A7C0] block mt-0.5">
                         {m.mode} • {m.map} • {m.sponsorName}
                       </span>
                     </div>
@@ -411,7 +411,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <span className="text-xs font-black text-white block">
                       ₹{m.prizePool.toLocaleString()}
                     </span>
-                    <span className="text-[10px] text-[#C8FF3D] font-bold">
+                    <span className="text-xs text-[#C8FF3D] font-bold">
                       FREE ENTRY
                     </span>
                   </div>
@@ -429,7 +429,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </span>
             <button
               onClick={() => onSelectCategory('Upcoming')}
-              className="text-[11px] text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
+              className="text-xs text-[#A7A7C0] hover:text-[#C8FF3D] font-bold flex items-center"
             >
               See all <ChevronRight className="w-3 h-3" />
             </button>
@@ -437,6 +437,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
           <div className="space-y-2">
             {upcomingMatches.slice(0, 3).map((m) => {
+              const remainingSlots = m.maxSlots - m.joinedSlots;
+              const isUnderTenPercent = (remainingSlots / m.maxSlots) <= 0.10;
+              const isNearStart = m.status === 'Live' || (m.schedule && m.schedule.toLowerCase().includes('live')) || (m.schedule && m.schedule.toLowerCase().includes('min') && !m.schedule.toLowerCase().includes('tomorrow'));
+              const isUrgent = isUnderTenPercent || isNearStart;
               const slotsPercent = Math.min(100, (m.joinedSlots / m.maxSlots) * 100);
               return (
                 <div
@@ -447,10 +451,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider">
+                        <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-xs rounded-full uppercase tracking-wider">
                           FREE ENTRY
                         </span>
-                        <span className="text-[10px] text-[#7B5CFF] font-bold">
+                        <span className="text-xs text-[#7B5CFF] font-bold">
                           {m.sponsorName}
                         </span>
                       </div>
@@ -463,7 +467,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       <span className="text-sm font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.3)] block">
                         ₹{m.prizePool.toLocaleString()}
                       </span>
-                      <span className="text-[9px] text-[#A7A7C0]">
+                      <span className="text-xs text-[#A7A7C0]">
                         Sponsor Pool
                       </span>
                     </div>
@@ -478,12 +482,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                           style={{ width: `${slotsPercent}%` }}
                         />
                       </div>
-                      <span className="text-[10px] text-[#A7A7C0]">
+                      <span className="text-xs text-[#A7A7C0]">
                         {m.joinedSlots}/{m.maxSlots} Slots
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] font-black text-[#C8FF3D]">
+                    <div className="flex items-center gap-1 text-xs font-black text-[#C8FF3D]">
                       <span>{m.userJoined ? 'Registered' : 'Join Free'}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </div>
@@ -501,7 +505,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#7B5CFF]" /> Beginner Friendly
               </span>
-              <span className="text-[10px] text-[#7B5CFF] font-bold">All Ranks Welcome</span>
+              <span className="text-xs text-[#7B5CFF] font-bold">All Ranks Welcome</span>
             </div>
 
             <div className="space-y-2">
@@ -521,7 +525,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       <h4 className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors truncate max-w-[170px]">
                         {m.title}
                       </h4>
-                      <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+                      <span className="text-xs text-[#A7A7C0] block mt-0.5">
                         {m.mode} • {m.map} • +10 XP per kill
                       </span>
                     </div>
@@ -531,7 +535,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     <span className="text-xs font-black text-white block">
                       ₹{m.prizePool.toLocaleString()}
                     </span>
-                    <span className="text-[9px] text-[#C8FF3D] font-extrabold uppercase">
+                    <span className="text-xs text-[#C8FF3D] font-extrabold uppercase">
                       FREE ENTRY
                     </span>
                   </div>
@@ -544,13 +548,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Referral Card (Coins only, no cash bonus) */}
         <div className="bg-gradient-to-r from-[#17113D] via-[#1B1B2B] to-[#14141F] border border-[#7B5CFF]/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
           <div>
-            <span className="text-[10px] text-[#C8FF3D] font-extrabold uppercase tracking-wider block">
+            <span className="text-xs text-[#C8FF3D] font-extrabold uppercase tracking-wider block">
               Referral Rewards
             </span>
             <div className="text-xs font-black text-white mt-0.5">
               Invite Friends: both of you get 100 bonus coins
             </div>
-            <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+            <span className="text-xs text-[#A7A7C0] block mt-0.5">
               Code: <strong className="font-mono text-[#FFB800]">{profile.referralCode}</strong>
             </span>
           </div>
@@ -569,7 +573,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <ShieldCheck className="w-4 h-4 text-[#C8FF3D]" />
             <span>Fair Play Guarantee</span>
           </div>
-          <p className="text-[10px] text-[#A7A7C0]">
+          <p className="text-xs text-[#A7A7C0]">
             Free entry. Prizes are sponsor-funded. Anti-cheat automated telemetry active on all custom rooms.
           </p>
         </div>

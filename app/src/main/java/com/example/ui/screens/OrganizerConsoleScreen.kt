@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,37 +18,70 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.ui.model.EsportsMatch
-import com.example.ui.model.PublishedResult
-import com.example.ui.model.TournamentService
+import com.example.ui.model.*
 import com.example.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/*
+ * ARCHITECTURAL PRODUCTION NOTE:
+ * Real production admin operations must run via a dedicated hosted web panel
+ * with Firebase Auth Custom Claims (role: organizer / admin). Match results
+ * and sponsor prize status updates are executed via authenticated Cloud Functions
+ * with server-side validation to maintain zero-trust security.
+ */
 
 @Composable
 fun OrganizerConsoleScreen(
     onClose: () -> Unit,
     onShowToast: (String) -> Unit
 ) {
+    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     var activeSection by remember { mutableStateOf("Dashboard") }
-    val sections = listOf("Dashboard", "Tournaments", "Room Manager", "Registrations", "Results", "Prize Tracker", "Support Tickets", "Reports", "Users", "Audit Log", "Announcements")
+    val sections = listOf(
+        "Dashboard",
+        "Tournaments",
+        "Room Manager",
+        "Registrations",
+        "Results",
+        "Prize Tracker",
+        "Support Tickets",
+        "Reports",
+        "Users",
+        "Audit Log",
+        "Announcements"
+    )
 
     var isSyncing by remember { mutableStateOf(false) }
     var showAdminGuide by remember { mutableStateOf(false) }
 
-    // Create / Edit Tournament state
+    // Confirmation dialog states
+    var banConfirmUser by remember { mutableStateOf<UserManagementRecord?>(null) }
+    var cancelConfirmMatch by remember { mutableStateOf<EsportsMatch?>(null) }
+    var removeConfirmReg by remember { mutableStateOf<TournamentRegistration?>(null) }
+
+    // Tournament creation state
     var title by remember { mutableStateOf("") }
     var sponsor by remember { mutableStateOf("") }
     var mode by remember { mutableStateOf("Squad") }
     var map by remember { mutableStateOf("Bermuda") }
-    var timeText by remember { mutableStateOf("Today, 09:00 PM") }
+    var selectedDate by remember { mutableStateOf("Today") }
+    var selectedTimeHour by remember { mutableStateOf("09") }
+    var selectedTimeMin by remember { mutableStateOf("00") }
+    var selectedTimeAmPm by remember { mutableStateOf("PM") }
     var prizeText by remember { mutableStateOf("10000") }
     var slotsText by remember { mutableStateOf("48") }
+    var minLevel by remember { mutableIntStateOf(30) }
+    var teamSize by remember { mutableStateOf("4 Players") }
+    var rulesText by remember { mutableStateOf("Mobile device only. Emulators strictly prohibited. No hacks, teaming, or third-party scripts. Minimum Free Fire Level 30 required.") }
+    var perKillPoints by remember { mutableIntStateOf(2) }
 
     // Room ID state
     var selectedMatchId by remember { mutableStateOf(TournamentService.matches.firstOrNull()?.id ?: "") }
@@ -55,24 +89,34 @@ fun OrganizerConsoleScreen(
     var roomPassInput by remember { mutableStateOf("") }
 
     // Registrations state
+    var regTournamentId by remember { mutableStateOf(TournamentService.matches.firstOrNull()?.id ?: "") }
     var newRegIgn by remember { mutableStateOf("") }
     var newRegUid by remember { mutableStateOf("") }
 
     // Results state
     var resultMatchId by remember { mutableStateOf(TournamentService.matches.firstOrNull()?.id ?: "") }
-    var firstIgn by remember { mutableStateOf("") }
-    var firstUid by remember { mutableStateOf("") }
+    var previewResultsDialog by remember { mutableStateOf(false) }
+    var firstIgn by remember { mutableStateOf("SOUL_IMMORTAL") }
+    var firstUid by remember { mutableStateOf("849201123") }
     var firstKills by remember { mutableStateOf("12") }
-    var firstPrize by remember { mutableStateOf("₹5,000 Trophy + Kit") }
-    var secondIgn by remember { mutableStateOf("") }
+    var firstPrize by remember { mutableStateOf("Trophy + Pro Headset (Sponsor value ₹5,000)") }
+    var secondIgn by remember { mutableStateOf("NEON_SOUL") }
+    var secondUid by remember { mutableStateOf("994821034") }
+    var secondKills by remember { mutableStateOf("9") }
+    var secondPrize by remember { mutableStateOf("Mechanical Keyboard (Sponsor value ₹3,000)") }
+    var thirdIgn by remember { mutableStateOf("VIPER_STRIKE") }
+    var thirdUid by remember { mutableStateOf("771920441") }
+    var thirdKills by remember { mutableStateOf("6") }
+    var thirdPrize by remember { mutableStateOf("Esports Jersey (Sponsor value ₹1,500)") }
 
-    // Announcement state
+    // Announcements state
     var announceTitle by remember { mutableStateOf("") }
     var announceMsg by remember { mutableStateOf("") }
+    var announceAudience by remember { mutableStateOf("All Players (Broadcast)") }
 
-    // Support ticket reply state
-    var replyText by remember { mutableStateOf("") }
-    var selectedTicketId by remember { mutableStateOf<String?>(null) }
+    // Users search & filter state
+    var userSearchQuery by remember { mutableStateOf("") }
+    var userStatusFilter by remember { mutableStateOf("All") }
 
     LazyColumn(
         modifier = Modifier
@@ -80,9 +124,9 @@ fun OrganizerConsoleScreen(
             .background(BgDark)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+        contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp)
     ) {
-        // Top Header with Close, Admin Guide (?) and Sync Now
+        // Top Bar: Back, Title, Guide Button, Sync Button
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,226 +135,152 @@ fun OrganizerConsoleScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
-                        onClick = onClose,
+                        onClick = { onClose() },
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(38.dp)
+                            .clip(CircleShape)
                             .background(CardSurface)
-                            .border(1.dp, CardBorder, RoundedCornerShape(10.dp))
+                            .border(1.dp, CardBorder, CircleShape)
                     ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Organizer Console", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Text("ORGANIZER CONSOLE", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                color = NeonLime,
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                Text("DEMO", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color.Black, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                            Surface(color = NeonLime, shape = RoundedCornerShape(6.dp)) {
+                                Text("DEMO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                             }
                         }
-                        Text("Free Fire Custom Rooms & Sponsor Cups", fontSize = 10.sp, color = TextSecondary)
+                        Text("100% Free Entry • Sponsor Funded Platform", fontSize = 11.sp, color = TextSecondary)
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    // Sync Now button
-                    Button(
-                        onClick = {
-                            isSyncing = true
-                            coroutineScope.launch {
-                                delay(1200)
-                                isSyncing = false
-                                onShowToast("Tournament & registration data synced successfully!")
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, NeonLime.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        if (isSyncing) {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), color = NeonLime, strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Sync, contentDescription = "Sync", tint = NeonLime, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sync Now", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeonLime)
-                        }
-                    }
-
-                    // Admin Guide Button (?)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     IconButton(
                         onClick = { showAdminGuide = true },
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
-                            .background(ElevatedSurface)
+                            .background(CardSurface)
                             .border(1.dp, CardBorder, CircleShape)
                     ) {
-                        Icon(Icons.Default.HelpOutline, contentDescription = "Admin Guide", tint = NeonLime, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.HelpOutline, contentDescription = "Admin Guide", tint = NeonLime, modifier = Modifier.size(18.dp))
+                    }
+
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                isSyncing = true
+                                delay(600)
+                                isSyncing = false
+                                onShowToast("Synced backend data successfully.")
+                            }
+                        },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(CardSurface)
+                            .border(1.dp, CardBorder, CircleShape)
+                    ) {
+                        if (isSyncing) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = NeonLime, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Sync, contentDescription = "Sync", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
         }
 
-        // Section Tabs (Horizontally scrollable)
+        // Section Tabs
         item {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 2.dp, top = 2.dp, end = 24.dp, bottom = 2.dp)
             ) {
                 items(sections) { sec ->
                     val isSelected = activeSection == sec
                     Surface(
                         modifier = Modifier.clickable { activeSection = sec },
-                        color = if (isSelected) NeonLime else CardSurface,
+                        color = if (isSelected) NeonLime else ElevatedSurface,
                         shape = RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) NeonLime else CardBorder)
                     ) {
                         Text(
                             text = sec,
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
                             color = if (isSelected) Color.Black else TextSecondary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     }
                 }
             }
         }
 
-        // 1. DASHBOARD
+        // Section: Dashboard
         if (activeSection == "Dashboard") {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Card(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardSurface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text("TOURNAMENTS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                Text("${TournamentService.matches.size}", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text("${TournamentService.matches.count { it.status == "Live" }} Live Now", fontSize = 10.sp, color = NeonLime, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("PLATFORM OVERVIEW", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ConsoleMetricCard("Active Tournaments", "${TournamentService.matches.count { it.status != "Completed" }}", NeonLime, Modifier.weight(1f))
+                        ConsoleMetricCard("Total Players", "${TournamentService.usersList.size}", Color.White, Modifier.weight(1f))
+                        ConsoleMetricCard("Prizes Recorded", "${TournamentService.prizeRecords.size}", GoldCoins, Modifier.weight(1f))
+                    }
 
-                        Card(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardSurface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text("REGISTRATIONS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                Text("${TournamentService.registrations.size}", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text("Active Contestants", fontSize = 10.sp, color = ElectricViolet, fontWeight = FontWeight.Bold)
+                    // Cloud architecture notice card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Info, contentDescription = null, tint = NeonLime, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Production Architecture Notice", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "In production, organizer administration is conducted via a dedicated web panel with Firebase Auth Custom Claims (role: organizer). Tournament result publishing and sponsor prize delivery tracking are secured via server-side Cloud Functions.",
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                lineHeight = 16.sp
+                            )
                         }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Card(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardSurface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                    // Quick Actions
+                    Text("QUICK DISPATCH", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { activeSection = "Tournaments" },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text("SPONSOR POOLS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                val totalPool = TournamentService.matches.sumOf { it.prizePool }
-                                Text("₹$totalPool", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text("100% Sponsor Funded", fontSize = 10.sp, color = GoldCoins)
-                            }
+                            Text("Create Tournament", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
                         }
-
-                        Card(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardSurface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                        Button(
+                            onClick = { activeSection = "Room Manager" },
+                            colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text("ROOM SECURITY", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                val configured = TournamentService.matches.count { it.roomId != null }
-                                Text("$configured/${TournamentService.matches.size}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text("Credentials Ready", fontSize = 10.sp, color = NeonLime)
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("QUICK MANAGEMENT", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
-                }
-            }
-
-            items(TournamentService.matches) { m ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardSurface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(m.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text("${m.mode} • ${m.map} • Sponsor: ${m.sponsor}", fontSize = 10.sp, color = TextSecondary)
-                            }
-                            Text("₹${m.prizePool}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Room ID: ${m.roomId ?: "Not set"}", fontSize = 10.sp, color = if (m.roomId != null) NeonLime else TextSecondary)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "Manage Room",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeonLime,
-                                    modifier = Modifier.clickable {
-                                        selectedMatchId = m.id
-                                        roomIdInput = m.roomId ?: ""
-                                        roomPassInput = m.roomPass ?: ""
-                                        activeSection = "Room Manager"
-                                    }
-                                )
-                                Text(
-                                    text = "Publish Results",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ElectricViolet,
-                                    modifier = Modifier.clickable {
-                                        resultMatchId = m.id
-                                        activeSection = "Results"
-                                    }
-                                )
-                            }
+                            Text("Set Room ID", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
         }
 
-        // 2. TOURNAMENTS (Create, Edit, Cancel, Duplicate)
+        // Section: Tournaments
         if (activeSection == "Tournaments") {
             item {
                 Card(
@@ -320,137 +290,272 @@ fun OrganizerConsoleScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Create / Edit Tournament", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("Free entry • Sponsor-funded prizes only", fontSize = 10.sp, color = NeonLime)
+                        Text("CREATE NEW TOURNAMENT", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("100% Free Entry • Sponsor Funded Prize Pool", fontSize = 11.sp, color = NeonLime, fontWeight = FontWeight.Bold)
 
                         OutlinedTextField(
                             value = title,
                             onValueChange = { title = it },
-                            label = { Text("Tournament Title", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            label = { Text("Tournament Title") },
+                            placeholder = { Text("e.g. CYBERFRAY GRAND FINALS") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         OutlinedTextField(
                             value = sponsor,
                             onValueChange = { sponsor = it },
-                            label = { Text("Sponsor Name (e.g. Asus ROG)", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            label = { Text("Sponsor Name") },
+                            placeholder = { Text("e.g. Asus ROG Gaming") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
+                        // Mode & Map
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = mode,
-                                onValueChange = { mode = it },
-                                label = { Text("Mode (Solo/Duo/Squad)", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = map,
-                                onValueChange = { map = it },
-                                label = { Text("Map (Bermuda/etc)", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Mode", fontSize = 11.sp, color = TextSecondary)
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("Solo", "Duo", "Squad").forEach { m ->
+                                        val isSel = mode == m
+                                        Surface(
+                                            modifier = Modifier.clickable {
+                                                mode = m
+                                                teamSize = when (m) {
+                                                    "Solo" -> "1 Player"
+                                                    "Duo" -> "2 Players"
+                                                    else -> "4 Players"
+                                                }
+                                            },
+                                            color = if (isSel) NeonLime else ElevatedSurface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(m, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                                        }
+                                    }
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Map", fontSize = 11.sp, color = TextSecondary)
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("Bermuda", "Purgatory", "Kalahari").forEach { mp ->
+                                        val isSel = map == mp
+                                        Surface(
+                                            modifier = Modifier.clickable { map = mp },
+                                            color = if (isSel) NeonLime else ElevatedSurface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(mp, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                                        }
+                                    }
+                                }
+                            }
                         }
+
+                        // Real Date Selector
+                        Column {
+                            Text("Kick-Off Date", fontSize = 11.sp, color = TextSecondary)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("Today", "Tomorrow", "In 2 Days", "Saturday").forEach { d ->
+                                    val isSel = selectedDate == d
+                                    Surface(
+                                        modifier = Modifier.clickable { selectedDate = d },
+                                        color = if (isSel) NeonLime else ElevatedSurface,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(d, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Real Time Selector (Hour, Minute, AM/PM)
+                        Column {
+                            Text("Kick-Off Time", fontSize = 11.sp, color = TextSecondary)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Hour
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("07", "08", "09", "10", "11").forEach { hr ->
+                                        val isSel = selectedTimeHour == hr
+                                        Surface(
+                                            modifier = Modifier.clickable { selectedTimeHour = hr },
+                                            color = if (isSel) NeonLime else ElevatedSurface,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(hr, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                                        }
+                                    }
+                                }
+                                Text(":", color = Color.White, fontWeight = FontWeight.Bold)
+                                // Min
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("00", "15", "30", "45").forEach { mn ->
+                                        val isSel = selectedTimeMin == mn
+                                        Surface(
+                                            modifier = Modifier.clickable { selectedTimeMin = mn },
+                                            color = if (isSel) NeonLime else ElevatedSurface,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(mn, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                                        }
+                                    }
+                                }
+                                // AM/PM
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("PM", "AM").forEach { ap ->
+                                        val isSel = selectedTimeAmPm == ap
+                                        Surface(
+                                            modifier = Modifier.clickable { selectedTimeAmPm = ap },
+                                            color = if (isSel) ElectricViolet else ElevatedSurface,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(ap, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Minimum Level & Team Size & Per-kill points
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Min FF Level", fontSize = 11.sp, color = TextSecondary)
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf(20, 30, 40).forEach { lvl ->
+                                        val isSel = minLevel == lvl
+                                        Surface(
+                                            modifier = Modifier.clickable { minLevel = lvl },
+                                            color = if (isSel) NeonLime else ElevatedSurface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("Lvl $lvl+", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp))
+                                        }
+                                    }
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Per-Kill Points", fontSize = 11.sp, color = TextSecondary)
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf(1, 2, 3).forEach { pt ->
+                                        val isSel = perKillPoints == pt
+                                        Surface(
+                                            modifier = Modifier.clickable { perKillPoints = pt },
+                                            color = if (isSel) ElectricViolet else ElevatedSurface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("$pt pt", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Placement Points Table Display
+                        Surface(
+                            color = ElevatedSurface,
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text("Placement Points Table:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonLime)
+                                Text("1st: 12 pts | 2nd: 9 pts | 3rd: 8 pts | 4th: 7 pts | 5th: 6 pts | 6th+: 1 pt", fontSize = 10.sp, color = TextSecondary)
+                            }
+                        }
+
+                        // Rules Text
+                        OutlinedTextField(
+                            value = rulesText,
+                            onValueChange = { rulesText = it },
+                            label = { Text("Rules & Fair Play Text") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = prizeText,
                                 onValueChange = { prizeText = it },
-                                label = { Text("Sponsor Prize Pool (₹)", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
+                                label = { Text("Sponsor Prize Value (₹)") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = slotsText,
                                 onValueChange = { slotsText = it },
-                                label = { Text("Max Slots", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
+                                label = { Text("Max Slots") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
                             )
                         }
-
-                        OutlinedTextField(
-                            value = timeText,
-                            onValueChange = { timeText = it },
-                            label = { Text("Kick-off Schedule Text", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
 
                         Button(
                             onClick = {
                                 if (title.isBlank()) {
-                                    onShowToast("Enter title")
+                                    onShowToast("Please enter a tournament title")
                                     return@Button
                                 }
-                                val pz = prizeText.toIntOrNull() ?: 10000
-                                val sl = slotsText.toIntOrNull() ?: 48
-                                TournamentService.createTournament(title, sponsor, mode, map, timeText, pz, sl)
-                                onShowToast("Tournament published: $title")
+                                val formattedTime = "$selectedDate, $selectedTimeHour:$selectedTimeMin $selectedTimeAmPm"
+                                val newMatch = TournamentService.createTournament(
+                                    title = title,
+                                    sponsor = sponsor,
+                                    mode = mode,
+                                    map = map,
+                                    startTimeText = formattedTime,
+                                    sponsorPrize = prizeText.toIntOrNull() ?: 10000,
+                                    maxSlots = slotsText.toIntOrNull() ?: 48,
+                                    minLevel = minLevel,
+                                    teamSize = teamSize,
+                                    rulesText = rulesText
+                                )
+                                onShowToast("Created tournament '${newMatch.title}'!")
                                 title = ""
                                 sponsor = ""
-                                activeSection = "Dashboard"
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Publish Cup", color = Color.Black, fontWeight = FontWeight.Black)
+                            Text("Publish Tournament (Free Entry)", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 13.sp)
                         }
                     }
                 }
             }
 
-            items(TournamentService.matches) { m ->
+            // Existing Tournaments List with Cancel option
+            item {
+                Text("CURRENT ACTIVE TOURNAMENTS", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+            }
+
+            items(TournamentService.matches) { match ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(m.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Sponsor: ${m.sponsor} • ₹${m.prizePool}", fontSize = 10.sp, color = TextSecondary)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(match.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("${match.mode} • ${match.map} • ${match.startTimeText}", fontSize = 11.sp, color = TextSecondary)
+                            Text("Sponsor: ${match.sponsor} • ₹${match.prizePool} pool (Sponsor-funded)", fontSize = 11.sp, color = NeonLime)
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "Duplicate",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonLime,
-                                modifier = Modifier.clickable {
-                                    TournamentService.createTournament("${m.title} (Copy)", m.sponsor, m.mode, m.map, m.startTimeText, m.prizePool, m.maxSlots)
-                                    onShowToast("Duplicated tournament!")
-                                }
-                            )
-                            Text(
-                                "Cancel",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = LiveRed,
-                                modifier = Modifier.clickable {
-                                    val idx = TournamentService.matches.indexOf(m)
-                                    if (idx != -1) TournamentService.matches.removeAt(idx)
-                                    onShowToast("Tournament cancelled.")
-                                }
-                            )
+
+                        IconButton(onClick = { cancelConfirmMatch = match }) {
+                            Icon(Icons.Default.DeleteOutline, contentDescription = "Cancel Tournament", tint = LiveRed)
                         }
                     }
                 }
             }
         }
 
-        // 3. ROOM MANAGER (Room ID, Password, auto-reveal 15 mins before start, instant reveal)
+        // Section: Room Manager
         if (activeSection == "Room Manager") {
             item {
                 Card(
@@ -459,24 +564,21 @@ fun OrganizerConsoleScreen(
                     colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Room Credential Manager", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("Auto-unlocks 15 minutes before start time", fontSize = 10.sp, color = TextSecondary)
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("SET FREE FIRE ROOM CREDENTIALS", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("Auto-reveals to joined players 15 minutes prior to kick-off", fontSize = 11.sp, color = TextSecondary)
 
-                        Text("Select Match:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                        LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(TournamentService.matches) { m ->
+                        // Tournament Dropdown Selector
+                        Text("Select Tournament:", fontSize = 11.sp, color = TextSecondary)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(TournamentService.matches.filter { it.status != "Completed" }) { m ->
                                 val isSel = selectedMatchId == m.id
                                 Surface(
-                                    modifier = Modifier.clickable {
-                                        selectedMatchId = m.id
-                                        roomIdInput = m.roomId ?: ""
-                                        roomPassInput = m.roomPass ?: ""
-                                    },
+                                    modifier = Modifier.clickable { selectedMatchId = m.id },
                                     color = if (isSel) NeonLime else ElevatedSurface,
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
-                                    Text(m.title, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                                    Text(m.title.take(24) + "...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
                                 }
                             }
                         }
@@ -484,40 +586,65 @@ fun OrganizerConsoleScreen(
                         OutlinedTextField(
                             value = roomIdInput,
                             onValueChange = { roomIdInput = it },
-                            label = { Text("Room ID", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            label = { Text("Free Fire Custom Room ID") },
+                            placeholder = { Text("e.g. 8849102") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         OutlinedTextField(
                             value = roomPassInput,
                             onValueChange = { roomPassInput = it },
-                            label = { Text("Room Password", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            label = { Text("Room Password") },
+                            placeholder = { Text("e.g. ffpro99") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
-                        Button(
-                            onClick = {
-                                if (roomIdInput.isBlank()) {
-                                    onShowToast("Enter room ID")
-                                    return@Button
-                                }
-                                TournamentService.setRoomCredentials(selectedMatchId, roomIdInput, roomPassInput, true)
-                                onShowToast("Instant room reveal published to players!")
-                                activeSection = "Dashboard"
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
-                        ) {
-                            Text("Instant Reveal Credentials", color = Color.Black, fontWeight = FontWeight.Black)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    if (roomIdInput.isBlank()) {
+                                        onShowToast("Enter room ID")
+                                        return@Button
+                                    }
+                                    TournamentService.setRoomCredentials(selectedMatchId, roomIdInput, roomPassInput, revealImmediately = false)
+                                    onShowToast("Credentials scheduled. Will auto-reveal 15m prior!")
+                                    roomIdInput = ""
+                                    roomPassInput = ""
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Auto-Reveal (15m)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    if (roomIdInput.isBlank()) {
+                                        onShowToast("Enter room ID")
+                                        return@Button
+                                    }
+                                    TournamentService.setRoomCredentials(selectedMatchId, roomIdInput, roomPassInput, revealImmediately = true)
+                                    onShowToast("Credentials revealed immediately to contestants!")
+                                    roomIdInput = ""
+                                    roomPassInput = ""
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Reveal Now ⚡", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }
             }
         }
 
-        // 4. REGISTRATIONS
+        // Section: Registrations
         if (activeSection == "Registrations") {
             item {
                 Card(
@@ -526,49 +653,85 @@ fun OrganizerConsoleScreen(
                     colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Manual Registration", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("MANUAL REGISTRATION ENTRY", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Button(
+                                onClick = {
+                                    val csv = TournamentService.registrations.joinToString("\n") { "${it.ign},${it.ffUid},${it.tournamentTitle},${it.status}" }
+                                    clipboardManager.setText(AnnotatedString(csv))
+                                    onShowToast("Exported ${TournamentService.registrations.size} registrations to clipboard (CSV)!")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Export CSV", fontSize = 11.sp, color = NeonLime, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // Tournament Selector
+                        Text("Tournament:", fontSize = 11.sp, color = TextSecondary)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(TournamentService.matches) { m ->
+                                val isSel = regTournamentId == m.id
+                                Surface(
+                                    modifier = Modifier.clickable { regTournamentId = m.id },
+                                    color = if (isSel) NeonLime else ElevatedSurface,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(m.title.take(20) + "...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                                }
+                            }
+                        }
+
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = newRegIgn,
                                 onValueChange = { newRegIgn = it },
-                                label = { Text("IGN", fontSize = 10.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
+                                label = { Text("Player IGN") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = newRegUid,
                                 onValueChange = { newRegUid = it },
-                                label = { Text("UID (8-12 digits)", fontSize = 10.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
+                                label = { Text("FF UID (8-12 digits)") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
                             )
                         }
+
                         Button(
                             onClick = {
-                                if (newRegIgn.isBlank() || newRegUid.isBlank()) {
-                                    onShowToast("Enter IGN and UID")
+                                if (newRegIgn.isBlank() || !newRegUid.matches(Regex("^[0-9]{8,12}$"))) {
+                                    onShowToast("Enter valid IGN and 8-12 digit UID")
                                     return@Button
                                 }
-                                val matchId = TournamentService.matches.firstOrNull()?.id ?: "m1"
-                                TournamentService.addRegistration(matchId, newRegIgn, newRegUid)
-                                onShowToast("Registered player $newRegIgn")
+                                TournamentService.addRegistration(regTournamentId, newRegIgn, newRegUid)
+                                onShowToast("Registered '$newRegIgn'!")
                                 newRegIgn = ""
                                 newRegUid = ""
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Approve & Register", color = Color.Black, fontWeight = FontWeight.Black)
+                            Text("Confirm Registration", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
                         }
                     }
                 }
+            }
+
+            item {
+                Text("PARTICIPANT ROSTER (${TournamentService.registrations.size})", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
             }
 
             items(TournamentService.registrations) { reg ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Row(
@@ -579,25 +742,38 @@ fun OrganizerConsoleScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(reg.ign, fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                            Text("UID: ${reg.ffUid} • ${reg.tournamentTitle}", fontSize = 10.sp, color = TextSecondary)
-                        }
-                        Text(
-                            "Remove",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = LiveRed,
-                            modifier = Modifier.clickable {
-                                TournamentService.registrations.remove(reg)
-                                onShowToast("Removed registration.")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(reg.ign, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    color = if (reg.status == "Approved") NeonLime.copy(alpha = 0.2f) else ElevatedSurface,
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(reg.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (reg.status == "Approved") NeonLime else TextSecondary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                }
                             }
-                        )
+                            Text("UID: ${reg.ffUid} • ${reg.tournamentTitle.take(25)}...", fontSize = 11.sp, color = TextSecondary)
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (reg.status != "Approved") {
+                                IconButton(onClick = {
+                                    TournamentService.approveRegistration(reg.id)
+                                    onShowToast("Approved ${reg.ign}")
+                                }) {
+                                    Icon(Icons.Default.Check, contentDescription = "Approve", tint = NeonLime, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                            IconButton(onClick = { removeConfirmReg = reg }) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove", tint = LiveRed, modifier = Modifier.size(18.dp))
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // 5. RESULTS (Publish results: placement, kills, sponsor prize label)
+        // Section: Results
         if (activeSection == "Results") {
             item {
                 Card(
@@ -607,84 +783,100 @@ fun OrganizerConsoleScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Publish Tournament Results", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("Record champion placement, kills & sponsor prize", fontSize = 10.sp, color = TextSecondary)
+                        Text("PUBLISH TOURNAMENT STANDINGS & RESULTS", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("Placements 1st to 12th • Sponsor Prizes Only", fontSize = 11.sp, color = NeonLime, fontWeight = FontWeight.Bold)
 
-                        OutlinedTextField(
-                            value = firstIgn,
-                            onValueChange = { firstIgn = it },
-                            label = { Text("1st Place Booyah IGN", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = firstKills,
-                                onValueChange = { firstKills = it },
-                                label = { Text("1st Kills", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = firstPrize,
-                                onValueChange = { firstPrize = it },
-                                label = { Text("1st Sponsor Prize", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
+                        // Tournament Dropdown
+                        Text("Tournament:", fontSize = 11.sp, color = TextSecondary)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(TournamentService.matches) { m ->
+                                val isSel = resultMatchId == m.id
+                                Surface(
+                                    modifier = Modifier.clickable { resultMatchId = m.id },
+                                    color = if (isSel) NeonLime else ElevatedSurface,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(m.title.take(24) + "...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                                }
+                            }
                         }
 
-                        OutlinedTextField(
-                            value = secondIgn,
-                            onValueChange = { secondIgn = it },
-                            label = { Text("2nd Place Runner-Up IGN", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
+                        // 1st Place
+                        Text("1st Place (Champion Booyah):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = firstIgn, onValueChange = { firstIgn = it }, label = { Text("IGN") }, singleLine = true, modifier = Modifier.weight(1f))
+                            OutlinedTextField(value = firstKills, onValueChange = { firstKills = it }, label = { Text("Kills") }, singleLine = true, modifier = Modifier.width(70.dp))
+                        }
+                        OutlinedTextField(value = firstPrize, onValueChange = { firstPrize = it }, label = { Text("Sponsor Prize Item Label") }, singleLine = true, modifier = Modifier.fillMaxWidth())
 
-                        Button(
-                            onClick = {
-                                if (firstIgn.isBlank()) {
-                                    onShowToast("Enter champion IGN")
-                                    return@Button
-                                }
-                                val k = firstKills.toIntOrNull() ?: 10
-                                TournamentService.publishResults(
-                                    PublishedResult(
+                        // 2nd Place
+                        Text("2nd Place:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC0C0C0))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = secondIgn, onValueChange = { secondIgn = it }, label = { Text("IGN") }, singleLine = true, modifier = Modifier.weight(1f))
+                            OutlinedTextField(value = secondKills, onValueChange = { secondKills = it }, label = { Text("Kills") }, singleLine = true, modifier = Modifier.width(70.dp))
+                        }
+                        OutlinedTextField(value = secondPrize, onValueChange = { secondPrize = it }, label = { Text("Sponsor Prize Item Label") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+
+                        // 3rd Place
+                        Text("3rd Place:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFCD7F32))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = thirdIgn, onValueChange = { thirdIgn = it }, label = { Text("IGN") }, singleLine = true, modifier = Modifier.weight(1f))
+                            OutlinedTextField(value = thirdKills, onValueChange = { thirdKills = it }, label = { Text("Kills") }, singleLine = true, modifier = Modifier.width(70.dp))
+                        }
+                        OutlinedTextField(value = thirdPrize, onValueChange = { thirdPrize = it }, label = { Text("Sponsor Prize Item Label") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { previewResultsDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Preview Results", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val tTitle = TournamentService.matches.find { it.id == resultMatchId }?.title ?: "Tournament"
+                                    val res = PublishedResult(
                                         tournamentId = resultMatchId,
+                                        tournamentTitle = tTitle,
                                         firstIgn = firstIgn,
-                                        firstUid = firstUid.ifBlank { "991002" },
-                                        firstKills = k,
+                                        firstUid = firstUid,
+                                        firstKills = firstKills.toIntOrNull() ?: 0,
                                         firstPrize = firstPrize,
-                                        secondIgn = secondIgn.ifBlank { "RunnerUp_99" },
-                                        secondUid = "882012",
-                                        secondKills = 6,
-                                        secondPrize = "₹3,000 Trophy",
-                                        thirdIgn = "Bronze_Hero",
-                                        thirdUid = "771920",
-                                        thirdKills = 4,
-                                        thirdPrize = "₹2,000 Trophy"
+                                        secondIgn = secondIgn,
+                                        secondUid = secondUid,
+                                        secondKills = secondKills.toIntOrNull() ?: 0,
+                                        secondPrize = secondPrize,
+                                        thirdIgn = thirdIgn,
+                                        thirdUid = thirdUid,
+                                        thirdKills = thirdKills.toIntOrNull() ?: 0,
+                                        thirdPrize = thirdPrize
                                     )
-                                )
-                                onShowToast("Published official results! Contestants notified.")
-                                activeSection = "Dashboard"
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
-                        ) {
-                            Text("Publish Official Results", color = Color.Black, fontWeight = FontWeight.Black)
+                                    TournamentService.publishResults(res)
+                                    onShowToast("Results published for '$tTitle'!")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Publish to App", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }
             }
         }
 
-        // 6. PRIZE TRACKER (Set status Recorded, Sponsor notified, Delivered by sponsor; triggers player notification)
+        // Section: Prize Tracker
         if (activeSection == "Prize Tracker") {
             item {
-                Text("Sponsor Prize Tracker", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                Text("Manage prize delivery status for winners", fontSize = 10.sp, color = TextSecondary)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("SPONSOR PRIZE LOGISTICS TRACKER", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+                    Text("Prizes are sponsor-funded and fulfilled outside the app. No cash payouts or UPI.", fontSize = 11.sp, color = TextSecondary)
+                }
             }
 
             items(TournamentService.prizeRecords) { prize ->
@@ -695,104 +887,94 @@ fun OrganizerConsoleScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(prize.tournamentTitle, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                            Surface(color = NeonLime.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) {
-                                Text(prize.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = NeonLime, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(prize.tournamentTitle, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Surface(
+                                color = when (prize.status) {
+                                    "Delivered by sponsor" -> NeonLime.copy(alpha = 0.2f)
+                                    "Sponsor notified" -> ElectricViolet.copy(alpha = 0.2f)
+                                    else -> ElevatedSurface
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    prize.status,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = when (prize.status) {
+                                        "Delivered by sponsor" -> NeonLime
+                                        "Sponsor notified" -> ElectricViolet
+                                        else -> Color.White
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
                             }
                         }
-                        Text("${prize.rank} • Sponsor: ${prize.sponsorName}", fontSize = 11.sp, color = TextSecondary)
-                        Text("Prize: ${prize.sponsorPrize}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
 
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = {
-                                    TournamentService.updatePrizeStatus(prize.id, "Recorded")
-                                    onShowToast("Marked as Recorded")
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
-                                contentPadding = PaddingValues(4.dp)
-                            ) {
-                                Text("Recorded", fontSize = 10.sp, color = Color.White)
+                        Text("Item: ${prize.sponsorPrize} • Sponsor: ${prize.sponsorName}", fontSize = 12.sp, color = NeonLime, fontWeight = FontWeight.Bold)
+
+                        // 3-Step Flow: Highlight only current step, checks on completed, next action lime button
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            // Step 1: Recorded
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Recorded", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
                             }
-                            Button(
-                                onClick = {
-                                    TournamentService.updatePrizeStatus(prize.id, "Sponsor notified")
-                                    onShowToast("Marked as Sponsor Notified")
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
-                                contentPadding = PaddingValues(4.dp)
-                            ) {
-                                Text("Notified", fontSize = 10.sp, color = GoldCoins)
+                            Text("→", color = TextSecondary)
+                            // Step 2: Sponsor Notified
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (prize.status == "Sponsor notified" || prize.status == "Delivered by sponsor") {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
+                                } else {
+                                    Icon(Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Notified", fontSize = 11.sp, color = if (prize.status != "Recorded") Color.White else TextSecondary, fontWeight = FontWeight.Bold)
                             }
-                            Button(
-                                onClick = {
-                                    TournamentService.updatePrizeStatus(prize.id, "Delivered by sponsor")
-                                    onShowToast("Marked as Delivered by Sponsor")
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
-                                contentPadding = PaddingValues(4.dp)
-                            ) {
-                                Text("Delivered", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Black)
+                            Text("→", color = TextSecondary)
+                            // Step 3: Delivered
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (prize.status == "Delivered by sponsor") {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
+                                } else {
+                                    Icon(Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Delivered", fontSize = 11.sp, color = if (prize.status == "Delivered by sponsor") NeonLime else TextSecondary, fontWeight = FontWeight.Bold)
                             }
                         }
-                    }
-                }
-            }
-        }
 
-        // 7. SUPPORT TICKETS
-        if (activeSection == "Support Tickets") {
-            item {
-                Text("Player Support & Dispute Tickets", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-            }
-
-            items(TournamentService.supportTickets) { ticket ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardSurface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(ticket.subject, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                            Surface(color = if (ticket.status == "Open") LiveRed.copy(alpha = 0.2f) else NeonLime.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) {
-                                Text(ticket.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (ticket.status == "Open") LiveRed else NeonLime, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        // Next Action Button (Prominent Lime)
+                        when (prize.status) {
+                            "Recorded" -> {
+                                Button(
+                                    onClick = {
+                                        TournamentService.updatePrizeStatus(prize.id, "Sponsor notified")
+                                        onShowToast("Sponsor ${prize.sponsorName} notified for delivery!")
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Mark: Sponsor Notified", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                }
                             }
-                        }
-                        Text("From: ${ticket.userIgn}", fontSize = 10.sp, color = TextSecondary)
-                        Text(ticket.message, fontSize = 11.sp, color = TextPrimary)
-
-                        if (ticket.reply != null) {
-                            Text("Reply: ${ticket.reply}", fontSize = 11.sp, color = NeonLime, fontWeight = FontWeight.Bold)
-                        } else {
-                            OutlinedTextField(
-                                value = if (selectedTicketId == ticket.id) replyText else "",
-                                onValueChange = {
-                                    selectedTicketId = ticket.id
-                                    replyText = it
-                                },
-                                label = { Text("Type reply...", fontSize = 10.sp) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                            Button(
-                                onClick = {
-                                    if (replyText.isNotBlank()) {
-                                        TournamentService.replyTicket(ticket.id, replyText)
-                                        onShowToast("Ticket replied and closed.")
-                                        replyText = ""
-                                        selectedTicketId = null
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
-                            ) {
-                                Text("Send Reply & Close Ticket", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            "Sponsor notified" -> {
+                                Button(
+                                    onClick = {
+                                        TournamentService.updatePrizeStatus(prize.id, "Delivered by sponsor")
+                                        onShowToast("Prize marked Delivered by Sponsor!")
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Mark: Delivered by Sponsor ✓", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                            else -> {
+                                Text("✓ Delivery fulfilled by sponsor outside the app", fontSize = 11.sp, color = TextSecondary)
                             }
                         }
                     }
@@ -800,34 +982,252 @@ fun OrganizerConsoleScreen(
             }
         }
 
-        // 8. REPORTS / DISPUTES
+        // Section: Reports & Disputes
         if (activeSection == "Reports") {
             item {
+                Text("DISPUTE & ANTI-CHEAT TICKETS (${TournamentService.disputeReports.size})", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+            }
+
+            if (TournamentService.disputeReports.isEmpty()) {
+                item {
+                    EmptyStateCard("No dispute reports pending. Fair play radar is clear!")
+                }
+            } else {
+                items(TournamentService.disputeReports) { rep ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Report by: ${rep.reporterIgn}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Surface(
+                                    color = if (rep.status == "Resolved") NeonLime.copy(alpha = 0.2f) else LiveRed.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(rep.status, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (rep.status == "Resolved") NeonLime else LiveRed, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                }
+                            }
+                            Text("Accused: ${rep.reportedIgn} • Tournament: ${rep.tournamentTitle}", fontSize = 11.sp, color = TextSecondary)
+                            Text("Reason: ${rep.reason}", fontSize = 12.sp, color = LiveRed, fontWeight = FontWeight.Bold)
+                            Text(rep.details, fontSize = 11.sp, color = Color.White)
+
+                            if (rep.status == "Pending") {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(
+                                        onClick = {
+                                            TournamentService.resolveDispute(rep.id, "Resolved")
+                                            onShowToast("Dispute #${rep.id} resolved by referee.")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Resolve & Warn", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            TournamentService.resolveDispute(rep.id, "Dismissed")
+                                            onShowToast("Dispute #${rep.id} dismissed.")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                                        shape = RoundedCornerShape(10.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Dismiss", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section: Users
+        if (activeSection == "Users") {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("USER MODERATION & ACCESS CONTROL", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+
+                    // Search box
+                    OutlinedTextField(
+                        value = userSearchQuery,
+                        onValueChange = { userSearchQuery = it },
+                        placeholder = { Text("Search by IGN or Free Fire UID...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Filter chips: All, Active, Warned, Banned
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("All", "Active", "Warned", "Banned").forEach { flt ->
+                            val isSel = userStatusFilter == flt
+                            Surface(
+                                modifier = Modifier.clickable { userStatusFilter = flt },
+                                color = if (isSel) NeonLime else ElevatedSurface,
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) NeonLime else CardBorder)
+                            ) {
+                                Text(
+                                    flt,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSel) FontWeight.Black else FontWeight.Bold,
+                                    color = if (isSel) Color.Black else TextSecondary,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            val filteredUsers = TournamentService.usersList.filter { u ->
+                val matchesQuery = u.ign.contains(userSearchQuery, ignoreCase = true) || u.ffUid.contains(userSearchQuery)
+                val matchesFilter = userStatusFilter == "All" || u.status.equals(userStatusFilter, ignoreCase = true)
+                matchesQuery && matchesFilter
+            }
+
+            if (filteredUsers.isEmpty()) {
+                item { EmptyStateCard("No users match the search and filter criteria.") }
+            } else {
+                items(filteredUsers) { u ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(u.ign, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        color = when (u.status) {
+                                            "Active" -> NeonLime.copy(alpha = 0.2f)
+                                            "Warned" -> GoldCoins.copy(alpha = 0.2f)
+                                            else -> LiveRed.copy(alpha = 0.2f)
+                                        },
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            u.status,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = when (u.status) {
+                                                "Active" -> NeonLime
+                                                "Warned" -> GoldCoins
+                                                else -> LiveRed
+                                            },
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text("UID: ${u.ffUid} • Warnings: ${u.warningsCount}", fontSize = 11.sp, color = TextSecondary)
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (u.status == "Banned") {
+                                    Button(
+                                        onClick = {
+                                            TournamentService.unbanUser(u.id)
+                                            onShowToast("Unbanned user '${u.ign}'")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Unban", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = {
+                                            TournamentService.warnUser(u.id)
+                                            onShowToast("Warned user '${u.ign}'")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Warn", color = GoldCoins, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+
+                                    Button(
+                                        onClick = { banConfirmUser = u },
+                                        colors = ButtonDefaults.buttonColors(containerColor = LiveRed.copy(alpha = 0.2f)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, LiveRed.copy(alpha = 0.5f)),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Ban", color = LiveRed, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section: Support Tickets
+        if (activeSection == "Support Tickets") {
+            item {
+                Text("HELP DESK TICKETS (${TournamentService.supportTickets.size})", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
+            }
+
+            items(TournamentService.supportTickets) { t ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Active Dispute Reports", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("No active dispute reports currently logged by referees.", fontSize = 11.sp, color = TextSecondary)
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(t.subject, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Surface(
+                                color = if (t.status == "Open") LiveRed.copy(alpha = 0.2f) else NeonLime.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(t.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (t.status == "Open") LiveRed else NeonLime, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        Text("From: ${t.userIgn}", fontSize = 11.sp, color = NeonLime)
+                        Text(t.message, fontSize = 12.sp, color = TextSecondary)
+
+                        t.reply?.let { r ->
+                            Surface(color = ElevatedSurface, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                Text("Organizer Reply: $r", fontSize = 11.sp, color = Color.White, modifier = Modifier.padding(8.dp))
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // 9. USERS (Warn, Ban, Unban)
-        if (activeSection == "Users") {
+        // Section: Audit Log
+        if (activeSection == "Audit Log") {
             item {
-                Text("User Management & Anti-Cheat", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                Text("ORGANIZER ACTION AUDIT TRAIL", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 1.sp)
             }
 
-            items(TournamentService.usersList) { u ->
+            items(TournamentService.auditLogs) { log ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Row(
@@ -838,72 +1238,16 @@ fun OrganizerConsoleScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(u.ign, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                            Text("UID: ${u.ffUid} • Status: ${u.status}", fontSize = 10.sp, color = when (u.status) {
-                                "Banned" -> LiveRed
-                                "Warned" -> GoldCoins
-                                else -> NeonLime
-                            })
+                            Text(log.action, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("By: ${log.adminName}", fontSize = 10.sp, color = NeonLime)
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                "Warn",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = GoldCoins,
-                                modifier = Modifier.clickable {
-                                    TournamentService.updateUserStatus(u.id, "Warned")
-                                    onShowToast("Warned user ${u.ign}")
-                                }
-                            )
-                            Text(
-                                "Ban",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = LiveRed,
-                                modifier = Modifier.clickable {
-                                    TournamentService.updateUserStatus(u.id, "Banned")
-                                    onShowToast("Banned user ${u.ign}")
-                                }
-                            )
-                            Text(
-                                "Active",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonLime,
-                                modifier = Modifier.clickable {
-                                    TournamentService.updateUserStatus(u.id, "Active")
-                                    onShowToast("Restored user ${u.ign}")
-                                }
-                            )
-                        }
+                        Text(log.timestamp, fontSize = 10.sp, color = TextSecondary)
                     }
                 }
             }
         }
 
-        // 10. AUDIT LOG
-        if (activeSection == "Audit Log") {
-            item {
-                Text("Administrator Audit Log", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-            }
-
-            items(TournamentService.auditLogs) { log ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Text(log.action, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Admin: ${log.adminName} • ${log.timestamp}", fontSize = 9.sp, color = TextSecondary)
-                    }
-                }
-            }
-        }
-
-        // 11. ANNOUNCEMENTS
+        // Section: Announcements
         if (activeSection == "Announcements") {
             item {
                 Card(
@@ -913,41 +1257,58 @@ fun OrganizerConsoleScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Send In-App Announcement", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("Broadcast notification to all registered players", fontSize = 10.sp, color = TextSecondary)
+                        Text("SEND IN-APP ANNOUNCEMENT", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+
+                        // Audience Selector: All Players or specific tournament
+                        Text("Target Audience:", fontSize = 11.sp, color = TextSecondary)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("All Players (Broadcast)", "Selected Tournament").forEach { aud ->
+                                val isSel = announceAudience == aud
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { announceAudience = aud },
+                                    color = if (isSel) NeonLime else ElevatedSurface,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                        Text(aud, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isSel) Color.Black else TextSecondary)
+                                    }
+                                }
+                            }
+                        }
 
                         OutlinedTextField(
                             value = announceTitle,
                             onValueChange = { announceTitle = it },
-                            label = { Text("Announcement Headline", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            label = { Text("Announcement Headline") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         OutlinedTextField(
                             value = announceMsg,
                             onValueChange = { announceMsg = it },
-                            label = { Text("Message details", fontSize = 11.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 3
+                            label = { Text("Message Body") },
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Button(
                             onClick = {
                                 if (announceTitle.isBlank() || announceMsg.isBlank()) {
-                                    onShowToast("Enter headline and message")
+                                    onShowToast("Please enter headline and message")
                                     return@Button
                                 }
-                                TournamentService.sendAnnouncement(announceTitle, announceMsg)
-                                onShowToast("Broadcast announcement sent!")
+                                TournamentService.broadcastAnnouncement(announceTitle, announceMsg, announceAudience)
+                                onShowToast("Dispatched announcement to $announceAudience!")
                                 announceTitle = ""
                                 announceMsg = ""
-                                activeSection = "Dashboard"
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Send Announcement", color = Color.Black, fontWeight = FontWeight.Black)
+                            Text("Broadcast Announcement 📢", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
                         }
                     }
                 }
@@ -955,48 +1316,195 @@ fun OrganizerConsoleScreen(
         }
     }
 
-    // Admin Guide Dialog (?)
-    if (showAdminGuide) {
-        Dialog(onDismissRequest = { showAdminGuide = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, CardBorder, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = CardSurface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("ADMIN GUIDE", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-                        IconButton(onClick = { showAdminGuide = false }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+    // Confirmation Dialogs
+    banConfirmUser?.let { u ->
+        Dialog(onDismissRequest = { banConfirmUser = null }) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = CardSurface)) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Confirm Account Ban", fontSize = 16.sp, fontWeight = FontWeight.Black, color = LiveRed)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Are you sure you want to ban player '${u.ign}' (UID: ${u.ffUid})? They will be barred from joining any tournament rooms.", fontSize = 12.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { banConfirmUser = null }) { Text("Cancel", color = TextSecondary) }
+                        Button(
+                            onClick = {
+                                TournamentService.banUser(u.id)
+                                onShowToast("Banned player '${u.ign}'")
+                                banConfirmUser = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = LiveRed)
+                        ) {
+                            Text("Ban Player", color = Color.White, fontWeight = FontWeight.Bold)
                         }
-                    }
-
-                    Text("• Tournaments: Create, edit, duplicate or cancel free-entry cups.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp)
-                    Text("• Room Manager: Set Room ID & Passwords. Automatically unlocks 15m before start or instantly via reveal button.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp)
-                    Text("• Prize Tracker: Track sponsor prize delivery status (Recorded, Sponsor Notified, Delivered).", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp)
-                    Text("• Support Tickets & Users: Reply to player support queries, warn or ban anti-cheat violators.", fontSize = 12.sp, color = TextPrimary, lineHeight = 16.sp)
-
-                    Button(
-                        onClick = { showAdminGuide = false },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
-                    ) {
-                        Text("Got It", color = Color.Black, fontWeight = FontWeight.Black)
                     }
                 }
             }
+        }
+    }
+
+    cancelConfirmMatch?.let { m ->
+        Dialog(onDismissRequest = { cancelConfirmMatch = null }) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = CardSurface)) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Cancel Tournament?", fontSize = 16.sp, fontWeight = FontWeight.Black, color = LiveRed)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Cancelling '${m.title}' will notify all registered contestants and remove it from the schedule.", fontSize = 12.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { cancelConfirmMatch = null }) { Text("Keep Active", color = TextSecondary) }
+                        Button(
+                            onClick = {
+                                TournamentService.cancelTournament(m.id)
+                                onShowToast("Cancelled '${m.title}'")
+                                cancelConfirmMatch = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = LiveRed)
+                        ) {
+                            Text("Cancel Tournament", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    removeConfirmReg?.let { reg ->
+        Dialog(onDismissRequest = { removeConfirmReg = null }) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = CardSurface)) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Remove Registration?", fontSize = 16.sp, fontWeight = FontWeight.Black, color = LiveRed)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Remove contestant '${reg.ign}' (UID: ${reg.ffUid}) from ${reg.tournamentTitle}?", fontSize = 12.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { removeConfirmReg = null }) { Text("Cancel", color = TextSecondary) }
+                        Button(
+                            onClick = {
+                                TournamentService.removeRegistration(reg.id)
+                                onShowToast("Removed '${reg.ign}' from tournament roster")
+                                removeConfirmReg = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = LiveRed)
+                        ) {
+                            Text("Remove", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Results Preview Dialog
+    if (previewResultsDialog) {
+        Dialog(onDismissRequest = { previewResultsDialog = false }) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = CardSurface)) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("OFFICIAL RESULTS PREVIEW", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("Placement Standings & Verified Sponsor Prizes", fontSize = 11.sp, color = NeonLime, fontWeight = FontWeight.Bold)
+
+                    Surface(color = ElevatedSurface, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("🥇 1st: $firstIgn • $firstKills Kills", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
+                            Text("Sponsor Prize: $firstPrize", fontSize = 11.sp, color = TextSecondary)
+                            Divider(color = CardBorder, thickness = 1.dp)
+                            Text("🥈 2nd: $secondIgn • $secondKills Kills", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC0C0C0))
+                            Text("Sponsor Prize: $secondPrize", fontSize = 11.sp, color = TextSecondary)
+                            Divider(color = CardBorder, thickness = 1.dp)
+                            Text("🥉 3rd: $thirdIgn • $thirdKills Kills", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFCD7F32))
+                            Text("Sponsor Prize: $thirdPrize", fontSize = 11.sp, color = TextSecondary)
+                        }
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Button(
+                            onClick = { previewResultsDialog = false },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime)
+                        ) {
+                            Text("Close Preview", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Admin Guide Overlay Dialog
+    if (showAdminGuide) {
+        Dialog(onDismissRequest = { showAdminGuide = false }) {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = CardSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.HelpOutline, contentDescription = null, tint = NeonLime, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Organizer Quick Guide", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    }
+
+                    Text("1. Tournaments: Schedule 100% free entry matches with sponsor prize labels.", fontSize = 12.sp, color = TextSecondary)
+                    Text("2. Room Manager: Register Custom Room ID & Password. Set to auto-reveal 15 minutes before kick-off.", fontSize = 12.sp, color = TextSecondary)
+                    Text("3. Registrations: Approve or remove contestants and export rosters to CSV.", fontSize = 12.sp, color = TextSecondary)
+                    Text("4. Results: Submit final Booyah placements (1st to 12th) with kills. Prizes are sponsor-fulfilled.", fontSize = 12.sp, color = TextSecondary)
+                    Text("5. Prize Tracker: Advance prize status (Recorded → Sponsor Notified → Delivered by Sponsor).", fontSize = 12.sp, color = TextSecondary)
+                    Text("6. Reports: Review player disputes and cheat telemetry.", fontSize = 12.sp, color = TextSecondary)
+
+                    Button(
+                        onClick = { showAdminGuide = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Got It", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConsoleMetricCard(
+    label: String,
+    value: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = CardSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = tint)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(label, fontSize = 10.sp, color = TextSecondary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+fun EmptyStateCard(message: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonLime, modifier = Modifier.size(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(message, fontSize = 12.sp, color = TextSecondary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }

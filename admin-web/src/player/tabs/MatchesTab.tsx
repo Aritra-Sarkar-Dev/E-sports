@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { PlayerMatch, MapType, GameMode } from '../types';
 import {
   Search,
@@ -90,7 +91,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
   const myMatchesCount = matches.filter((m) => m.userJoined).length;
 
   return (
-    <div className="space-y-4 pb-12 animate-fade-in">
+    <div className="space-y-4 pb-32 animate-fade-in">
       {/* Top Section Header */}
       <div className="px-4 pt-3 pb-1">
         <h2 className="text-lg font-black text-white flex items-center gap-2">
@@ -101,7 +102,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
 
       {/* Horizontal Scrolling Sub Tabs without clipping */}
       <div className="px-4">
-        <div className="flex bg-[#14141F] p-1 rounded-2xl border border-[#262640] overflow-x-auto no-scrollbar gap-1">
+        <div className="flex bg-[#14141F] p-1 rounded-2xl border border-[#262640] overflow-x-auto no-scrollbar gap-1 pr-6">
           {(['Upcoming', 'Live', 'Completed', 'My Matches'] as const).map((tab) => {
             const isSelected = activeSubTab === tab;
             return (
@@ -116,7 +117,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
               >
                 {tab}
                 {tab === 'My Matches' && myMatchesCount > 0 && (
-                  <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                  <span className={`ml-1.5 text-xs px-1.5 py-0.2 rounded-full font-black ${
                     isSelected ? 'bg-black text-[#C8FF3D]' : 'bg-[#C8FF3D]/20 text-[#C8FF3D]'
                   }`}>
                     {myMatchesCount}
@@ -172,7 +173,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
                     setSelectedMode('All');
                     setSortBy('time_asc');
                   }}
-                  className="flex items-center gap-1 text-[10px] text-[#FF4D6D] font-bold hover:underline"
+                  className="flex items-center gap-1 text-xs text-[#FF4D6D] font-bold hover:underline"
                 >
                   <RotateCcw className="w-3 h-3" /> Reset All
                 </button>
@@ -181,7 +182,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
 
             {/* Sort: Time vs Prize Pool */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-[#A7A7C0] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#A7A7C0] uppercase tracking-wider block">
                 Sort Tournaments
               </span>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -193,7 +194,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
                       : 'bg-[#0A0A0F] border-[#262640] text-slate-300'
                   }`}
                 >
-                  <span className="block text-[9px] text-[#A7A7C0]">Time</span>
+                  <span className="block text-xs text-[#A7A7C0]">Time</span>
                   <span>Earliest First ↑</span>
                 </button>
 
@@ -205,7 +206,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
                       : 'bg-[#0A0A0F] border-[#262640] text-slate-300'
                   }`}
                 >
-                  <span className="block text-[9px] text-[#A7A7C0]">Sponsor Pool</span>
+                  <span className="block text-xs text-[#A7A7C0]">Sponsor Pool</span>
                   <span>High to Low ↓</span>
                 </button>
               </div>
@@ -213,7 +214,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
 
             {/* Filter by Map */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-[#A7A7C0] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#A7A7C0] uppercase tracking-wider block">
                 Battleground Map
               </span>
               <div className="grid grid-cols-3 gap-1.5 text-xs">
@@ -227,7 +228,7 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
                   <button
                     key={mapItem.id}
                     onClick={() => setSelectedMap(mapItem.id)}
-                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold truncate transition-all ${
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold truncate transition-all ${
                       selectedMap === mapItem.id
                         ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] font-black'
                         : 'bg-[#0A0A0F] border-[#262640] text-slate-300'
@@ -250,15 +251,15 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
         )}
 
         {/* Quick Map Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <span className="text-[10px] text-[#A7A7C0] font-bold uppercase shrink-0 mr-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pr-8">
+          <span className="text-xs text-[#A7A7C0] font-bold uppercase shrink-0 mr-1">
             Map:
           </span>
           {['All', 'Bermuda', 'Purgatory', 'Kalahari', 'Alpine'].map((m) => (
             <button
               key={m}
               onClick={() => setSelectedMap(m)}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border ${
+              className={`px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
                 selectedMap === m
                   ? 'bg-[#C8FF3D] text-black border-[#C8FF3D] font-black'
                   : 'bg-[#14141F] text-[#A7A7C0] border-[#262640] hover:text-white'
@@ -281,120 +282,139 @@ export const MatchesTab: React.FC<MatchesTabProps> = ({
             </p>
           </div>
         ) : (
-          filteredMatches.map((match) => {
-            const slotsPercent = Math.min(100, (match.joinedSlots / match.maxSlots) * 100);
-            const remainingSlots = match.maxSlots - match.joinedSlots;
-            const isUrgentSlots = remainingSlots > 0 && remainingSlots <= Math.ceil(match.maxSlots * 0.1);
-            const mapAccent = MAP_ACCENTS[match.map] || '#C8FF3D';
-            const isFull = match.joinedSlots >= match.maxSlots;
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.08,
+                },
+              },
+            }}
+            initial="hidden"
+            animate="show"
+            className="space-y-3"
+          >
+            {filteredMatches.map((match) => {
+              const slotsPercent = Math.min(100, (match.joinedSlots / match.maxSlots) * 100);
+              const remainingSlots = match.maxSlots - match.joinedSlots;
+              const isUrgentSlots = remainingSlots > 0 && remainingSlots <= Math.ceil(match.maxSlots * 0.1);
+              const mapAccent = MAP_ACCENTS[match.map] || '#C8FF3D';
+              const isFull = match.joinedSlots >= match.maxSlots;
 
-            return (
-              <div
-                key={match.id}
-                onClick={() => onOpenMatchDetail(match)}
-                className="bg-[#14141F] border border-[#262640] rounded-2xl p-4 space-y-3 hover:border-slate-500 transition-all cursor-pointer group shadow-lg relative overflow-hidden"
-                style={{ borderLeftWidth: '4px', borderLeftColor: mapAccent }}
-              >
-                {/* Header Row: Tags + Title */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-[9px] rounded-full uppercase tracking-wider">
-                        FREE ENTRY
-                      </span>
-                      <span className="px-2 py-0.5 bg-[#1B1B2B] text-white font-bold text-[9px] rounded-full border border-[#262640]">
-                        {match.mode}
-                      </span>
-                      <span className="px-2 py-0.5 bg-[#1B1B2B] text-[#A7A7C0] font-bold text-[9px] rounded-full border border-[#262640]">
-                        {match.map}
-                      </span>
-                      {match.status === 'Live' && (
-                        <span className="px-2 py-0.5 bg-[#FF4D6D] text-white font-black text-[9px] rounded-full animate-pulse">
-                          LIVE
+              return (
+                <motion.div
+                  key={match.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+                  }}
+                  onClick={() => onOpenMatchDetail(match)}
+                  className="bg-[#14141F] border border-[#262640] rounded-2xl p-4 space-y-3 hover:border-slate-500 transition-all cursor-pointer group shadow-lg relative overflow-hidden"
+                  style={{ borderLeftWidth: '4px', borderLeftColor: mapAccent }}
+                >
+                  {/* Header Row: Tags + Title */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="px-2 py-0.5 bg-[#C8FF3D] text-black font-black text-xs rounded-full uppercase tracking-wider">
+                          FREE ENTRY
                         </span>
-                      )}
+                        <span className="px-2 py-0.5 bg-[#1B1B2B] text-white font-bold text-xs rounded-full border border-[#262640]">
+                          {match.mode}
+                        </span>
+                        <span className="px-2 py-0.5 bg-[#1B1B2B] text-[#A7A7C0] font-bold text-xs rounded-full border border-[#262640]">
+                          {match.map}
+                        </span>
+                        {match.status === 'Live' && (
+                          <span className="px-2 py-0.5 bg-[#FF4D6D] text-white font-black text-xs rounded-full animate-pulse">
+                            LIVE
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="text-sm font-black text-white group-hover:text-[#C8FF3D] transition-colors leading-snug line-clamp-1">
+                        {match.title}
+                      </h3>
+                      <span className="text-xs text-[#7B5CFF] font-semibold block mt-0.5">
+                        Sponsored by {match.sponsorName}
+                      </span>
                     </div>
 
-                    <h3 className="text-sm font-black text-white group-hover:text-[#C8FF3D] transition-colors leading-snug line-clamp-1">
-                      {match.title}
-                    </h3>
-                    <span className="text-[10px] text-[#7B5CFF] font-semibold block mt-0.5">
-                      Sponsored by {match.sponsorName}
-                    </span>
-                  </div>
-
-                  {/* Prize Display */}
-                  <div className="text-right shrink-0">
-                    <span className="text-base font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.3)] block">
-                      ₹{match.prizePool.toLocaleString()}
-                    </span>
-                    <span className="text-[9px] text-[#A7A7C0] block">
-                      Sponsor Pool
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3 Metric Pills */}
-                <div className="grid grid-cols-3 gap-2 text-center bg-[#0A0A0F] p-2 rounded-xl border border-[#262640] text-xs">
-                  <div>
-                    <span className="text-[9px] text-[#A7A7C0] block">Entry Fee</span>
-                    <span className="font-black text-[#C8FF3D]">FREE</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-[#A7A7C0] block">Elimination</span>
-                    <span className="font-black text-[#7B5CFF]">+10 XP</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-[#A7A7C0] block">Kick-Off</span>
-                    <span className="font-bold text-white truncate block">
-                      {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Slots meter & Action */}
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-2 flex-1 mr-3">
-                    <div className="flex-1 max-w-[120px] bg-[#0A0A0F] h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${isUrgentSlots ? 'bg-[#FF4D6D]' : 'bg-gradient-to-r from-[#7B5CFF] to-[#C8FF3D]'}`}
-                        style={{ width: `${slotsPercent}%` }}
-                      />
+                    {/* Prize Display */}
+                    <div className="text-right shrink-0">
+                      <span className="text-base font-black text-white drop-shadow-[0_0_8px_rgba(200,255,61,0.3)] block">
+                        ₹{match.prizePool.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-[#A7A7C0] block">
+                        Sponsor Pool
+                      </span>
                     </div>
-                    <span className={`text-[10px] font-mono shrink-0 ${isUrgentSlots ? 'text-[#FF4D6D] font-extrabold animate-pulse' : 'text-[#A7A7C0]'}`}>
-                      {isUrgentSlots ? `${remainingSlots} slots left!` : `${match.joinedSlots}/${match.maxSlots}`}
-                    </span>
                   </div>
 
-                  {match.userJoined ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenMatchDetail(match);
-                      }}
-                      className="px-3 py-1.5 bg-[#C8FF3D]/15 border border-[#C8FF3D]/40 text-[#C8FF3D] font-black text-[11px] rounded-xl flex items-center gap-1"
-                    >
-                      <span>Registered</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  ) : isFull ? (
-                    <span className="text-[10px] text-[#A7A7C0] font-bold">Full</span>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onJoinMatch(match);
-                      }}
-                      className="px-3 py-1.5 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-[11px] rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
-                    >
-                      <span>Join Free</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })
+                  {/* 3 Metric Pills */}
+                  <div className="grid grid-cols-3 gap-2 text-center bg-[#0A0A0F] p-2 rounded-xl border border-[#262640] text-xs">
+                    <div>
+                      <span className="text-xs text-[#A7A7C0] block">Entry Fee</span>
+                      <span className="font-black text-[#C8FF3D]">FREE</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-[#A7A7C0] block">Elimination</span>
+                      <span className="font-black text-[#7B5CFF]">+10 XP</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-[#A7A7C0] block">Kick-Off</span>
+                      <span className="font-bold text-white truncate block">
+                        {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Slots meter & Action */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2 flex-1 mr-3">
+                      <div className="flex-1 max-w-[120px] bg-[#0A0A0F] h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${isUrgentSlots ? 'bg-[#FF4D6D]' : 'bg-[#C8FF3D]'}`}
+                          style={{ width: `${slotsPercent}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-mono shrink-0 ${isUrgentSlots ? 'text-[#FF4D6D] font-extrabold animate-pulse' : 'text-[#A7A7C0]'}`}>
+                        {isUrgentSlots ? `${remainingSlots} slots left!` : `${match.joinedSlots}/${match.maxSlots}`}
+                      </span>
+                    </div>
+
+                    {match.userJoined ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenMatchDetail(match);
+                        }}
+                        className="px-3 py-1.5 bg-[#C8FF3D]/15 border border-[#C8FF3D]/40 text-[#C8FF3D] font-black text-xs rounded-xl flex items-center gap-1"
+                      >
+                        <span>Registered</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    ) : isFull ? (
+                      <span className="text-xs text-[#A7A7C0] font-bold">Full</span>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onJoinMatch(match);
+                        }}
+                        className="px-3 py-1.5 bg-[#C8FF3D] hover:bg-[#b5f02c] text-black font-extrabold text-xs rounded-xl shadow active:scale-95 transition-all flex items-center gap-1"
+                      >
+                        <span>Join Free</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         )}
       </div>
     </div>

@@ -85,7 +85,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-14 animate-fade-in">
+    <div className="space-y-4 pb-32 animate-fade-in">
       {/* Cover Banner & Avatar Header */}
       <div className="relative">
         <div className="h-28 bg-gradient-to-r from-[#17113D] via-[#1B1B2B] to-[#0A0A0F] overflow-hidden border-b border-[#262640]">
@@ -112,7 +112,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   className="w-full h-full object-cover rounded-full border-2 border-[#14141F]"
                 />
               </div>
-              <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-[#7B5CFF] text-white text-[9px] font-black rounded-full shadow border border-[#14141F]">
+              <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-[#7B5CFF] text-white text-xs font-black rounded-full shadow border border-[#14141F]">
                 LVL {profile.level}
               </span>
             </div>
@@ -120,7 +120,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             {/* Name & In-Game Tag */}
             <div className="flex items-center gap-1.5 justify-center">
               <h2 className="text-base font-black text-white">{profile.name}</h2>
-              <span className="px-2 py-0.5 bg-[#C8FF3D]/15 text-[#C8FF3D] font-extrabold text-[10px] rounded-full border border-[#C8FF3D]/30">
+              <span className="px-2 py-0.5 bg-[#C8FF3D]/15 text-[#C8FF3D] font-extrabold text-xs rounded-full border border-[#C8FF3D]/30">
                 {profile.rankTier}
               </span>
             </div>
@@ -140,7 +140,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
             {/* XP Level Bar */}
             <div className="w-full mt-3 bg-[#0A0A0F] p-2.5 rounded-xl border border-[#262640] space-y-1">
-              <div className="flex justify-between text-[10px] text-[#A7A7C0]">
+              <div className="flex justify-between text-xs text-[#A7A7C0]">
                 <span>XP Progress</span>
                 <span className="font-bold text-white">{profile.xp} / {profile.maxXp} XP</span>
               </div>
@@ -180,32 +180,32 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">Matches</span>
+            <span className="text-xs text-[#A7A7C0] block">Matches</span>
             <span className="text-base font-black text-white">{profile.stats.matches}</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">Victories (Booyah)</span>
+            <span className="text-xs text-[#A7A7C0] block">Victories (Booyah)</span>
             <span className="text-base font-black text-[#C8FF3D]">{profile.stats.wins}</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">Eliminations</span>
+            <span className="text-xs text-[#A7A7C0] block">Eliminations</span>
             <span className="text-base font-black text-white">{profile.stats.kills}</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">K/D Ratio</span>
+            <span className="text-xs text-[#A7A7C0] block">K/D Ratio</span>
             <span className="text-base font-black text-white">{profile.stats.kdRatio}</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">Win Rate</span>
+            <span className="text-xs text-[#A7A7C0] block">Win Rate</span>
             <span className="text-base font-black text-[#7B5CFF]">{profile.stats.winRate}%</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-3 rounded-2xl">
-            <span className="text-[10px] text-[#A7A7C0] block">PRIZES WON</span>
+            <span className="text-xs text-[#A7A7C0] block">PRIZES WON</span>
             <span className="text-base font-black text-[#FFB800]">{profile.stats.prizesWon}</span>
           </div>
         </div>
@@ -220,19 +220,19 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-[#14141F] border border-[#C8FF3D]/40 p-2.5 rounded-2xl text-center space-y-1">
             <span className="text-xl block">👑</span>
-            <span className="text-[10px] font-black text-[#C8FF3D] block">Top Player</span>
+            <span className="text-xs font-black text-[#C8FF3D] block">Top Player</span>
             <span className="text-[8px] text-[#A7A7C0] block">Tier 1 Elite</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-2.5 rounded-2xl text-center space-y-1">
             <span className="text-xl block">⚡</span>
-            <span className="text-[10px] font-bold text-white block">Booyah Master</span>
+            <span className="text-xs font-bold text-white block">Booyah Master</span>
             <span className="text-[8px] text-[#A7A7C0] block">10+ Victories</span>
           </div>
 
           <div className="bg-[#14141F] border border-[#262640] p-2.5 rounded-2xl text-center space-y-1">
             <span className="text-xl block">🎯</span>
-            <span className="text-[10px] font-bold text-white block">Sharpshooter</span>
+            <span className="text-xs font-bold text-white block">Sharpshooter</span>
             <span className="text-[8px] text-[#A7A7C0] block">150+ Eliminations</span>
           </div>
         </div>
@@ -252,7 +252,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <span className="text-xs font-black text-white group-hover:text-[#C8FF3D] transition-colors block">
                 CYBER TITANS [CYBR]
               </span>
-              <span className="text-[10px] text-[#A7A7C0]">
+              <span className="text-xs text-[#A7A7C0]">
                 4 Roster Members • Squad Tournament Ready
               </span>
             </div>
@@ -265,13 +265,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       <div className="px-4">
         <div className="bg-gradient-to-r from-[#17113D] via-[#1B1B2B] to-[#14141F] border border-[#7B5CFF]/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
           <div>
-            <span className="text-[10px] text-[#C8FF3D] font-extrabold uppercase tracking-wider block">
+            <span className="text-xs text-[#C8FF3D] font-extrabold uppercase tracking-wider block">
               Invite Friends
             </span>
             <div className="text-xs font-black text-white mt-0.5">
               Code: <span className="font-mono text-[#FFB800]">{profile.referralCode}</span>
             </div>
-            <span className="text-[10px] text-[#A7A7C0]">Share your code and both of you get 100 bonus coins</span>
+            <span className="text-xs text-[#A7A7C0]">Share your code and both of you get 100 bonus coins</span>
           </div>
 
           <button
@@ -298,11 +298,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <div className="text-left">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-white text-sm">Organizer Console</span>
-                  <span className="px-2 py-0.5 bg-[#C8FF3D] text-black text-[9px] font-black rounded-full uppercase tracking-wider">
+                  <span className="px-2 py-0.5 bg-[#C8FF3D] text-black text-xs font-black rounded-full uppercase tracking-wider">
                     {profile.role}
                   </span>
                 </div>
-                <span className="text-[10px] text-[#A7A7C0] block mt-0.5">
+                <span className="text-xs text-[#A7A7C0] block mt-0.5">
                   Create tournaments, manage rooms & publish results
                 </span>
               </div>
@@ -327,7 +327,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               </div>
               <div className="text-left">
                 <span className="font-bold text-white block">Demo: switch to organizer role</span>
-                <span className="text-[10px] text-[#A7A7C0]">
+                <span className="text-xs text-[#A7A7C0]">
                   Current role:{' '}
                   <strong className={profile.role === 'organizer' || profile.role === 'admin' ? 'text-[#C8FF3D]' : 'text-slate-400'}>
                     {profile.role.toUpperCase()}
@@ -367,11 +367,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-white block">Organizer Console</span>
-                  <span className="px-1.5 py-0.2 bg-[#C8FF3D] text-black text-[9px] font-black rounded-full uppercase tracking-wider">
+                  <span className="px-1.5 py-0.2 bg-[#C8FF3D] text-black text-xs font-black rounded-full uppercase tracking-wider">
                     DEMO
                   </span>
                 </div>
-                <span className="text-[10px] text-[#A7A7C0]">
+                <span className="text-xs text-[#A7A7C0]">
                   Create tournaments, set room ID/password & publish results
                 </span>
               </div>
@@ -390,7 +390,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               </div>
               <div>
                 <span className="font-bold text-white block">Tournament Organizer Portal</span>
-                <span className="text-[10px] text-[#C8FF3D]">Switch to Admin Console Dashboard</span>
+                <span className="text-xs text-[#C8FF3D]">Switch to Admin Console Dashboard</span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[#A7A7C0]" />
@@ -405,7 +405,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <Shield className="w-4 h-4 text-[#C8FF3D]" />
               <div>
                 <span className="font-bold text-white block">Fair Play & Anti-Cheat Protocol</span>
-                <span className="text-[10px] text-[#A7A7C0]">Free entry. Prizes are sponsor-funded.</span>
+                <span className="text-xs text-[#A7A7C0]">Free entry. Prizes are sponsor-funded.</span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[#A7A7C0]" />

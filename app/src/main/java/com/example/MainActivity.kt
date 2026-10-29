@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,22 +52,20 @@ fun FFArenaPlayerApp() {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Authentication & Onboarding state
+    var isSplashFinished by remember { mutableStateOf(true) } // Ready for immediate view, or toggle
+    var hasCompletedOnboarding by remember { mutableStateOf(true) }
+    var authScreenState by remember { mutableStateOf<String?>("main") } // "login", "signup", "organizer_login", "main"
+
     // Navigation State (Strictly 4 tabs)
     var currentTab by remember { mutableStateOf("Home") }
+    var matchesInitialTab by remember { mutableStateOf("Upcoming") }
 
-    // Back button handling: if in sub screen or not on Home, back goes to Home
+    // Organizer console view state
     var showOrganizerConsole by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showOrganizerConsole || currentTab != "Home") {
-        if (showOrganizerConsole) {
-            showOrganizerConsole = false
-        } else {
-            currentTab = "Home"
-        }
-    }
-
-    // App State (Zero real-money wallet)
-    var profile by remember { mutableStateOf(MockData.defaultProfile) }
+    // App User State (Defaults to Aritra Sarkar, NEON_SOUL, 994821034)
+    var profile by remember { mutableStateOf(AuthService.currentUser ?: MockData.defaultProfile) }
     var coins by remember { mutableIntStateOf(540) }
     var streakDay by remember { mutableIntStateOf(5) }
     var hasCheckedInToday by remember { mutableStateOf(false) }
@@ -97,6 +96,61 @@ fun FFArenaPlayerApp() {
         coroutineScope.launch {
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    // Hardware Back Button handling
+    BackHandler(enabled = showOrganizerConsole || currentTab != "Home" || authScreenState != "main") {
+        if (showOrganizerConsole) {
+            showOrganizerConsole = false
+        } else if (currentTab != "Home") {
+            currentTab = "Home"
+        } else if (authScreenState == "signup" || authScreenState == "organizer_login") {
+            authScreenState = "login"
+        }
+    }
+
+    // Auth Screen flow
+    if (!AuthService.isLoggedIn || authScreenState == "login" || authScreenState == "signup" || authScreenState == "organizer_login") {
+        when (authScreenState) {
+            "signup" -> {
+                SignUpScreen(
+                    onSignUpSuccess = { newUser ->
+                        profile = newUser
+                        authScreenState = "main"
+                        showToast("Welcome to FF Arena, ${newUser.ign}!")
+                    },
+                    onNavigateToLogin = { authScreenState = "login" },
+                    onShowToast = { showToast(it) }
+                )
+            }
+            "organizer_login" -> {
+                LoginScreen(
+                    onLoginSuccess = { user ->
+                        profile = user
+                        authScreenState = "main"
+                        showOrganizerConsole = true
+                    },
+                    onNavigateToSignUp = { authScreenState = "signup" },
+                    onOpenOrganizerLogin = {},
+                    onShowToast = { showToast(it) }
+                )
+            }
+            else -> {
+                LoginScreen(
+                    onLoginSuccess = { user ->
+                        profile = user
+                        authScreenState = "main"
+                        if (user.role == "organizer" || user.role == "admin") {
+                            showOrganizerConsole = true
+                        }
+                    },
+                    onNavigateToSignUp = { authScreenState = "signup" },
+                    onOpenOrganizerLogin = { authScreenState = "organizer_login" },
+                    onShowToast = { showToast(it) }
+                )
+            }
+        }
+        return
     }
 
     Scaffold(
@@ -167,6 +221,7 @@ fun FFArenaPlayerApp() {
                             onOpenMatchDetail = { selectedDetailMatch = it },
                             onOpenLeaderboard = { showLeaderboard = true },
                             onSelectModeFilter = {
+                                matchesInitialTab = "Upcoming"
                                 currentTab = "Matches"
                             }
                         )
@@ -177,7 +232,8 @@ fun FFArenaPlayerApp() {
                             matches = matches,
                             onOpenMatchDetail = { selectedDetailMatch = it },
                             onJoinMatch = { selectedJoinMatch = it },
-                            onReportMatch = { reportMatch = it }
+                            onReportMatch = { reportMatch = it },
+                            initialTab = matchesInitialTab
                         )
                     }
 
@@ -201,7 +257,7 @@ fun FFArenaPlayerApp() {
                                     if (it.id == mission.id) it.copy(isClaimed = true) else it
                                 }
                                 coins += mission.rewardCoins
-                                showToast("Quest Complete: +${mission.rewardCoins} Coins!")
+                                showToast("Quest Complete: +${mission.rewardCoins} Loyalty Coins!")
                             },
                             onRedeemStoreItem = { item ->
                                 if (coins >= item.coins) {
@@ -226,7 +282,7 @@ fun FFArenaPlayerApp() {
                             },
                             onCopyReferral = {
                                 clipboardManager.setText(AnnotatedString(profile.referralCode))
-                                showToast("Code copied: ${profile.referralCode}. Both of you get 100 bonus coins!")
+                                showToast("Code copied: ${profile.referralCode}. Both get 100 bonus coins!")
                             },
                             onOpenEditProfile = {
                                 showEditProfile = true
@@ -270,9 +326,12 @@ fun FFArenaPlayerApp() {
             },
             onCopyRoomCredentials = {
                 if (match.roomId != null) {
-                    clipboardManager.setText(AnnotatedString("Room: ${match.roomId} Pass: ${match.roomPass ?: "ffpro"}"))
+                    clipboardManager.setText(AnnotatedString("Room: ${match.roomId} Pass: ${match.roomPass ?: "ffpro99"}"))
                     showToast("Room ID & Pass copied!")
                 }
+            },
+            onShareTournament = {
+                clipboardManager.setText(AnnotatedString("Join ${match.title} for FREE on FF Arena! 100% Free Entry • Sponsor Pool ₹${match.prizePool}"))
             }
         )
     }
@@ -336,6 +395,19 @@ fun FFArenaPlayerApp() {
             match = match,
             onDismiss = { reportMatch = null },
             onSubmitReport = { reason, desc ->
+                TournamentService.disputeReports.add(
+                    0,
+                    DisputeReportRecord(
+                        id = "rep_${System.currentTimeMillis()}",
+                        tournamentTitle = match.title,
+                        reporterIgn = profile.ign,
+                        reportedIgn = "Suspected Contestant",
+                        reason = reason,
+                        timestamp = "Just now",
+                        status = "Pending",
+                        details = desc
+                    )
+                )
                 showToast("Dispute ticket submitted to referee. Ticket ID: #DISP${System.currentTimeMillis() % 10000}")
             }
         )
@@ -399,6 +471,8 @@ fun FFArenaPlayerApp() {
         LogoutDialog(
             onConfirm = {
                 showLogoutDialog = false
+                AuthService.logout()
+                authScreenState = "login"
                 showToast("Logged out successfully.")
             },
             onDismiss = { showLogoutDialog = false }
@@ -408,9 +482,8 @@ fun FFArenaPlayerApp() {
 
 /**
  * Floating Pill Bottom Navigation
- * Strict 4 tabs: Home, Matches, Rewards, Profile
- * Active tab: lime pill with label
- * Inactive tabs: icon only
+ * Strictly 4 tabs: Home, Matches, Rewards, Profile
+ * SHOWS TEXT LABELS FOR ALL TABS with high contrast
  */
 @Composable
 fun FloatingPillBottomNav(
@@ -427,60 +500,58 @@ fun FloatingPillBottomNav(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(58.dp)
-                .shadow(elevation = 20.dp, shape = RoundedCornerShape(29.dp), spotColor = NeonLime.copy(alpha = 0.35f))
-                .clip(RoundedCornerShape(29.dp))
-                .border(1.dp, CardBorder, RoundedCornerShape(29.dp))
+                .height(62.dp)
+                .shadow(elevation = 20.dp, shape = RoundedCornerShape(31.dp), spotColor = NeonLime.copy(alpha = 0.35f))
+                .clip(RoundedCornerShape(31.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(31.dp))
                 .testTag("floating_bottom_nav"),
-            shape = RoundedCornerShape(29.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xF014141F))
+            shape = RoundedCornerShape(31.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xF214141F))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 6.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEach { navItem ->
                     val isSelected = currentTab == navItem.label
-
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(if (isSelected) NeonLime else Color.Transparent)
                             .clickable { onTabSelect(navItem.label) }
                             .padding(
-                                horizontal = if (isSelected) 16.dp else 10.dp,
-                                vertical = 8.dp
+                                horizontal = if (isSelected) 14.dp else 8.dp,
+                                vertical = 6.dp
                             )
                             .testTag("tab_${navItem.label.lowercase()}"),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
                                 imageVector = navItem.icon,
                                 contentDescription = navItem.label,
                                 tint = if (isSelected) Color.Black else TextSecondary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            if (isSelected) {
-                                Text(
-                                    text = navItem.label,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = Color.Black
-                                )
-                            }
+                            // SHOW TEXT LABELS FOR ALL TABS (Selected: Black on Lime, Inactive: TextSecondary)
+                            Text(
+                                text = navItem.label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                color = if (isSelected) Color.Black else TextSecondary
+                            )
                         }
                     }
                 }

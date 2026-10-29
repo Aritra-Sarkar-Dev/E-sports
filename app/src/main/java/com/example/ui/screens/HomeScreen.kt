@@ -92,9 +92,9 @@ fun HomeScreen(
             .background(BgDark)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
+        contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp) // Safe-area bottom padding
     ) {
-        // Sticky Header: Avatar, Greeting, COIN CHIP ONLY, Notification Bell (NO wallet chip)
+        // Sticky Header: Avatar, Greeting, COIN CHIP ONLY, Notification Bell
         item {
             Row(
                 modifier = Modifier
@@ -123,14 +123,14 @@ fun HomeScreen(
                     Column {
                         Text(
                             text = "WELCOME BACK",
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextSecondary,
                             letterSpacing = 1.sp
                         )
                         Text(
                             text = "Hey, ${profile.name.substringBefore(" ")} ⚡",
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White
                         )
@@ -151,21 +151,21 @@ fun HomeScreen(
                         ) {
                             Icon(Icons.Default.MonetizationOn, contentDescription = "Coins", tint = GoldCoins, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(5.dp))
-                            Text(text = "$coins", fontSize = 12.sp, fontWeight = FontWeight.Black, color = GoldCoins)
+                            Text(text = "$coins", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GoldCoins)
                         }
                     }
 
                     // Notification Bell
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(ElevatedSurface)
                             .border(1.dp, CardBorder, CircleShape)
                             .clickable { onOpenNotifications() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(20.dp))
                         if (unreadCount > 0) {
                             Box(
                                 modifier = Modifier
@@ -189,7 +189,7 @@ fun HomeScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(170.dp)
+                    .height(175.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .border(1.dp, CardBorder, RoundedCornerShape(20.dp)),
                 colors = CardDefaults.cardColors(containerColor = ElevatedSurface)
@@ -219,7 +219,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     text = currentBanner.third,
-                                    fontSize = 9.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Black,
                                     color = Color.Black,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -249,7 +249,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = currentBanner.second,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ElectricViolet
                             )
@@ -262,7 +262,7 @@ fun HomeScreen(
                         ) {
                             Text(
                                 text = "• Sponsor-funded prize",
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 color = TextSecondary,
                                 fontWeight = FontWeight.Bold
                             )
@@ -274,7 +274,7 @@ fun HomeScreen(
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                                 modifier = Modifier.height(34.dp)
                             ) {
-                                Text("Join Free", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                Text("Join Free", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Black, modifier = Modifier.size(14.dp))
                             }
@@ -284,7 +284,7 @@ fun HomeScreen(
             }
         }
 
-        // Quick Actions Row (4 items: Streak, Daily Spin, My Squad, Ranks)
+        // Quick Actions Row (4 items: Streak, Daily Spin: bonus coins, My Squad, Ranks)
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -305,12 +305,12 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Streak", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(if (hasCheckedInToday) "Claimed" else "+50 Coins", fontSize = 9.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Streak", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(if (hasCheckedInToday) "Claimed" else "+50 Coins", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
                     }
                 }
 
-                // Daily Spin
+                // Daily Spin: bonus coins
                 Card(
                     modifier = Modifier
                         .weight(1f)
@@ -325,8 +325,8 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null, tint = GoldCoins, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Daily Spin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Free Win", fontSize = 9.sp, fontWeight = FontWeight.Black, color = GoldCoins)
+                        Text("Daily Spin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("bonus coins", fontSize = 10.sp, fontWeight = FontWeight.Black, color = GoldCoins)
                     }
                 }
 
@@ -345,8 +345,8 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Default.Group, contentDescription = null, tint = ElectricViolet, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("My Squad", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("4v4 Ready", fontSize = 9.sp, fontWeight = FontWeight.Black, color = ElectricViolet)
+                        Text("My Squad", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("4v4 Ready", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricViolet)
                     }
                 }
 
@@ -365,16 +365,16 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = NeonLime, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Ranks", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Top Players", fontSize = 9.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Ranks", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Top Players", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
                     }
                 }
             }
         }
 
-        // Pinned Next Match Countdown Card (If registered)
-        if (myJoinedMatch != null) {
-            item {
+        // Pinned Next Match Countdown Card (If registered) or Join First CTA
+        item {
+            if (myJoinedMatch != null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -397,7 +397,7 @@ fun HomeScreen(
                                         .background(NeonLime)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("NEXT MATCH KICK-OFF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                                Text("NEXT MATCH KICK-OFF", fontSize = 11.sp, fontWeight = FontWeight.Black, color = NeonLime)
                             }
 
                             Surface(
@@ -411,7 +411,7 @@ fun HomeScreen(
                                 ) {
                                     Icon(Icons.Default.Schedule, contentDescription = null, tint = NeonLime, modifier = Modifier.size(12.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Room reveals in $countdownText", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeonLime)
+                                    Text("Room reveals in $countdownText", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonLime)
                                 }
                             }
                         }
@@ -424,9 +424,9 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text(myJoinedMatch.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                Text(myJoinedMatch.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text("${myJoinedMatch.mode} • ${myJoinedMatch.map} • Sponsor: ${myJoinedMatch.sponsor}", fontSize = 11.sp, color = TextSecondary)
+                                Text("${myJoinedMatch.mode} • ${myJoinedMatch.map} • Sponsor: ${myJoinedMatch.sponsor}", fontSize = 12.sp, color = TextSecondary)
                             }
 
                             Surface(
@@ -438,22 +438,53 @@ fun HomeScreen(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("View Room", fontSize = 11.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                                    Text("View Room", fontSize = 12.sp, fontWeight = FontWeight.Black, color = NeonLime)
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = NeonLime, modifier = Modifier.size(14.dp))
                                 }
                             }
                         }
                     }
                 }
+            } else {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectModeFilter("Upcoming") },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("NO UPCOMING MATCH REGISTERED", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text("Join your first 100% free tournament", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+
+                        Button(
+                            onClick = { onSelectModeFilter("Upcoming") },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Join Now", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
             }
         }
 
-        // Mode Filter Chips (With end padding so last chip is never clipped)
+        // Category Filter Chips: scrollable with right padding so none are clipped
         item {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(end = 24.dp)
+                contentPadding = PaddingValues(start = 2.dp, top = 2.dp, end = 32.dp, bottom = 2.dp)
             ) {
                 items(categories) { cat ->
                     val isSelected = selectedCategory == cat
@@ -471,14 +502,14 @@ fun HomeScreen(
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
                             color = if (isSelected) Color.Black else TextSecondary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                         )
                     }
                 }
             }
         }
 
-        // Section: LIVE NOW
+        // Live Matches Header (if any)
         if (liveMatches.isNotEmpty()) {
             item {
                 Row(
@@ -494,112 +525,76 @@ fun HomeScreen(
                                 .background(LiveRed)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("LIVE NOW", fontSize = 12.sp, fontWeight = FontWeight.Black, color = LiveRed)
+                        Text(
+                            text = "LIVE MATCHES IN PROGRESS",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            color = LiveRed,
+                            letterSpacing = 1.sp
+                        )
                     }
-                    Text("Watch Lobby", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                    Text(
+                        text = "${liveMatches.size} Active",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
             items(liveMatches) { match ->
-                MatchCard(match = match, onClick = { onOpenMatchDetail(match) })
+                MatchCardHome(
+                    match = match,
+                    onClick = { onOpenMatchDetail(match) }
+                )
             }
         }
 
-        // Section: STARTING SOON
+        // Upcoming Tournaments Header
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Bolt, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("STARTING SOON", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
-                Text("See all", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonLime, modifier = Modifier.clickable { onSelectModeFilter("Upcoming") })
+                Text(
+                    text = "UPCOMING TOURNAMENTS",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 1.sp
+                )
+
+                Text(
+                    text = "See All",
+                    fontSize = 12.sp,
+                    color = NeonLime,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onSelectModeFilter("Upcoming") }
+                )
             }
         }
 
-        items(upcomingMatches.take(3)) { match ->
-            MatchCard(match = match, onClick = { onOpenMatchDetail(match) })
-        }
-
-        // Referral Card: Invite Friends (Coins only, no cash!)
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = CardSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, ElectricViolet.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.horizontalGradient(listOf(Color(0xFF17113D), ElevatedSurface))
-                        )
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("INVITE FRIENDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = NeonLime)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Both of you get 100 bonus coins", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Code: ${profile.referralCode}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldCoins)
-                    }
-
-                    Button(
-                        onClick = { onOpenRewards() },
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonLime),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text("Share", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                    }
-                }
-            }
-        }
-
-        // Fair Play Guarantee
-        item {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = BgDark,
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Shield, contentDescription = null, tint = NeonLime, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Fair Play & Sponsor Guarantee", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Free entry. Prizes are sponsor-funded. Automated telemetry anti-cheat active across all custom lobbies.",
-                        fontSize = 10.sp,
-                        color = TextSecondary,
-                        lineHeight = 14.sp
-                    )
-                }
-            }
+        items(upcomingMatches.take(4)) { match ->
+            MatchCardHome(
+                match = match,
+                onClick = { onOpenMatchDetail(match) }
+            )
         }
     }
 }
 
 @Composable
-fun MatchCard(
+fun MatchCardHome(
     match: EsportsMatch,
     onClick: () -> Unit
 ) {
     val remainingSlots = match.maxSlots - match.joinedSlots
-    val isUrgent = remainingSlots in 1..4
+    // Red ONLY when under 10% slots left OR under 15 minutes to start (e.g. "LIVE" or contains "min")
+    val isUnderTenPercent = (remainingSlots.toFloat() / match.maxSlots) <= 0.10f
+    val isNearStart = match.status == "Live" || match.startTimeText.contains("LIVE", ignoreCase = true) || (match.startTimeText.contains("min", ignoreCase = true) && !match.startTimeText.contains("Tomorrow"))
+    val isUrgent = isUnderTenPercent || isNearStart
+
     val slotsPercent = (match.joinedSlots.toFloat() / match.maxSlots).coerceIn(0f, 1f)
 
     val mapAccent = when (match.map) {
@@ -641,7 +636,7 @@ fun MatchCard(
                             ) {
                                 Text(
                                     text = "FREE ENTRY",
-                                    fontSize = 9.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Black,
                                     color = Color.Black,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -655,7 +650,7 @@ fun MatchCard(
                             ) {
                                 Text(
                                     text = match.mode,
-                                    fontSize = 9.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextSecondary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -669,7 +664,7 @@ fun MatchCard(
                             ) {
                                 Text(
                                     text = match.map,
-                                    fontSize = 9.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextSecondary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -683,7 +678,7 @@ fun MatchCard(
                                 ) {
                                     Text(
                                         text = "LIVE",
-                                        fontSize = 9.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Black,
                                         color = Color.White,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -693,8 +688,8 @@ fun MatchCard(
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(match.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text("Sponsored by ${match.sponsor}", fontSize = 10.sp, color = ElectricViolet, fontWeight = FontWeight.Bold)
+                        Text(match.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("Sponsored by ${match.sponsor}", fontSize = 11.sp, color = ElectricViolet, fontWeight = FontWeight.Bold)
                     }
 
                     Column(horizontalAlignment = Alignment.End) {
@@ -704,39 +699,41 @@ fun MatchCard(
                             fontWeight = FontWeight.Black,
                             color = Color.White
                         )
-                        Text("Sponsor Pool", fontSize = 9.sp, color = TextSecondary)
+                        Text("Sponsor-funded", fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // 3 Metric Chips: Free Entry | +10 XP per kill | Kick-off
+                // 3 Metric Chips: Free Entry | +10 XP per kill | Kick-off (Minimum 12-13px text)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .background(ElevatedSurface)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Entry", fontSize = 8.sp, color = TextSecondary)
-                        Text("FREE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = NeonLime)
+                        Text("Entry", fontSize = 12.sp, color = TextSecondary)
+                        Text("FREE", fontSize = 13.sp, fontWeight = FontWeight.Black, color = NeonLime)
                     }
+
                     Column {
-                        Text("Elimination", fontSize = 8.sp, color = TextSecondary)
-                        Text("+10 XP", fontSize = 11.sp, fontWeight = FontWeight.Black, color = ElectricViolet)
+                        Text("Elimination", fontSize = 12.sp, color = TextSecondary)
+                        Text("+${match.perKillXp} XP", fontSize = 13.sp, fontWeight = FontWeight.Black, color = ElectricViolet)
                     }
+
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("Kick-Off", fontSize = 8.sp, color = TextSecondary)
-                        Text(match.startTimeText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Kick-Off", fontSize = 12.sp, color = TextSecondary)
+                        Text(match.startTimeText, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Slots progress & Join CTA
+                // Slots progress & Join CTA: lime by default, red ONLY when under 10% left or under 15m to start
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -759,9 +756,9 @@ fun MatchCard(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         if (isUrgent) {
-                            Text("$remainingSlots slots left!", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LiveRed)
+                            Text("$remainingSlots slots left!", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LiveRed)
                         } else {
-                            Text("${match.joinedSlots}/${match.maxSlots} Slots", fontSize = 10.sp, color = TextSecondary)
+                            Text("${match.joinedSlots}/${match.maxSlots} Slots", fontSize = 11.sp, color = TextSecondary)
                         }
                     }
 
@@ -772,10 +769,10 @@ fun MatchCard(
                     ) {
                         Text(
                             text = if (match.isJoined) "Registered" else "Join Free",
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                             color = if (match.isJoined) NeonLime else Color.Black,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
                 }
